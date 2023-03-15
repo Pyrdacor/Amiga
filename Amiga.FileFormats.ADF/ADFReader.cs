@@ -1,6 +1,6 @@
 ﻿namespace Amiga.FileFormats.ADF
 {
-    public class ADFReader
+    public static class ADFReader
     {
         public static IADF LoadADFFile(Stream stream, bool allowInvalidChecksum)
         {

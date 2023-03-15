@@ -124,5 +124,65 @@
             if (reader.ReadDword() != unchecked((uint)-3)) // ST_FILE
                 throw new InvalidDataException("Invalid file block subtype.");
         }
+
+        public static void Write(DataWriter writer, string name, int sector, List<int> dataSectors,
+            int extensionBlockSector, int dataSize, uint nextHashSector, uint parentSector,
+            DateTime dateTime)
+        {
+            writer.WriteDword(2); // T_HEADER
+            writer.WriteDword((uint)sector);
+            writer.WriteDword((uint)dataSectors.Count);
+            writer.WriteDword(0);
+            writer.WriteDword((uint)dataSectors[0]);
+            int checksumPosition = writer.Position;
+            writer.WriteDword(0); // checksum placeholder
+
+            // Write the data sectors
+            for (int i = 0; i < 72; ++i)
+            {
+                int dataSectorIndex = 71 - i;
+                writer.WriteDword(dataSectorIndex < dataSectors.Count ? (uint)dataSectors[dataSectorIndex] : 0);
+            }
+
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            writer.WriteDword((uint)dataSize);
+
+            // TODO: for now we don't support comments but we add the code to make it easier later
+            string comment = "";
+            comment = comment.Length > 79 ? comment[..79] : comment;
+            writer.WriteByte((byte)comment.Length);
+            writer.WriteChars(comment.PadRight(79, '\0').ToCharArray());
+
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+
+            Util.WriteDateTime(writer, dateTime); // last change date, TODO: maybe later use the info from the source file system?
+
+            name = name.Length > 30 ? name[..30] : name;
+            writer.WriteByte((byte)name.Length);
+            writer.WriteChars(name.PadRight(30, '\0').ToCharArray());
+            writer.WriteByte(0);
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            writer.WriteDword(0); // we don't support creating links
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+
+            writer.WriteDword(nextHashSector);
+            writer.WriteDword(parentSector);
+            writer.WriteDword((uint)extensionBlockSector);
+            writer.WriteDword(unchecked((uint)-3)); // ST_FILE
+
+            uint checksum = RootBlock.CalculateChecksum(writer.ToArray());
+            writer.Position = checksumPosition;
+            writer.WriteDword(checksum);
+            writer.Position = SectorDataProvider.SectorSize;
+        }
     }
 }

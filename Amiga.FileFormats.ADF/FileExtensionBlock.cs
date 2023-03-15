@@ -67,5 +67,35 @@
             if (reader.ReadDword() != unchecked((uint)-3)) // ST_FILE
                 throw new InvalidDataException("Invalid file extension block subtype.");
         }
+
+        public static void Write(DataWriter writer, int fileHeaderSector, int sector, List<int> dataSectors, int nextExtensionBlockSector)
+        {
+            writer.WriteDword(16); // T_LIST
+            writer.WriteDword((uint)sector);
+            writer.WriteDword((uint)dataSectors.Count);
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            int checksumPosition = writer.Position;
+            writer.WriteDword(0); // checksum placeholder
+
+            // Write the data sectors
+            for (int i = 0; i < 72; ++i)
+            {
+                int dataSectorIndex = 71 - i;
+                writer.WriteDword(dataSectorIndex < dataSectors.Count ? (uint)dataSectors[dataSectorIndex] : 0);
+            }
+
+            for (int i = 0; i < 47; ++i)
+                writer.WriteDword(0);
+
+            writer.WriteDword((uint)fileHeaderSector);
+            writer.WriteDword((uint)nextExtensionBlockSector);
+            writer.WriteDword(unchecked((uint)-3)); // ST_FILE
+
+            uint checksum = RootBlock.CalculateChecksum(writer.ToArray());
+            writer.Position = checksumPosition;
+            writer.WriteDword(checksum);
+            writer.Position = SectorDataProvider.SectorSize;
+        }
     }
 }
