@@ -1,4 +1,6 @@
-﻿namespace Amiga.FileFormats.ADF
+﻿using System.Data;
+
+namespace Amiga.FileFormats.ADF
 {
     internal class RootBlock : BaseDirectory
     {
@@ -119,6 +121,9 @@
 
                     for (int i = 0; i < parts.Length - 1; ++i)
                     {
+                        if (i != 0)
+                            path += '/' + parts[i];
+
                         if (createdDirectories.TryGetValue(path, out var dir))
                             parent = dir;
                         else
@@ -128,8 +133,6 @@
                             parent = new DirectoryEntry(path, parent);
                             createdDirectories.Add(path, parent);
                         }
-
-                        path += '/' + parts[i];
                     }
 
                     parent!.Files.Add(parts[^1], file.Value.Length);
@@ -319,19 +322,24 @@
                             sectorWriter(sector, 1, writer => FileBlock.Write(writer, System.IO.Path.GetFileName(filePath), sectors[0], dataSectors, extensionSector, data.Length, (uint)nextSector, (uint)parentSector, now));
 
                             // Write data blocks and extension block
+                            int dataBlockStartIndex = 1;
                             while (true)
                             {
+                                int endDataSector = extensionSector == 0 ? 0 : extensionSector + 1;
+
                                 for (int d = 0; d < dataSectors.Count; ++d)
                                 {
-                                    int nextDataSector = d == dataSectors.Count - 1 ? 0 : dataSectors[d + 1];
-                                    sectorWriter(dataSectors[d], 1, writer => DataBlock.Write(writer, sectors[0], 1 + d, nextDataSector, data, ref dataIndex, configuration.FileSystem));
+                                    int nextDataSector = d == dataSectors.Count - 1 ? endDataSector : dataSectors[d + 1];
+                                    sectorWriter(dataSectors[d], 1, writer => DataBlock.Write(writer, sectors[0], dataBlockStartIndex + d, nextDataSector, data, ref dataIndex, configuration.FileSystem));
                                 }
 
                                 if (extensionSector == 0)
                                     break;
 
+                                dataBlockStartIndex += 72;
                                 dataSectors = sectors.Skip(sectorListOffset).Take(72).ToList();
                                 int nextExtensionSector = sectors.Count > sectorListOffset + 72 ? sectors[sectorListOffset + 72] : 0;
+                                //int nextDataSector = sectors.Count > sectorListOffset + 72 ? sectors[sectorListOffset + 72] : 0;
 
                                 // Write the extension block
                                 sectorWriter(extensionSector, 1, writer => FileExtensionBlock.Write(writer, sectors[0], extensionSector, dataSectors, nextExtensionSector));
@@ -375,7 +383,7 @@
                 if (name.Length > 30)
                     name = name[0..30];
                 writer.WriteByte((byte)name.Length);
-                writer.WriteChars(name.ToCharArray());
+                writer.WriteChars(name.PadRight(30, '\0').ToCharArray());
                 writer.WriteByte(0);
                 writer.WriteDword(0);
                 writer.WriteDword(0);
@@ -383,7 +391,7 @@
                 Util.WriteDateTime(writer, now); // creation time
                 writer.WriteDword(0);
                 writer.WriteDword(0);
-                writer.WriteDword(0); // TODO: dir cache
+                writer.WriteDword(0); // we don't support dir cache
                 writer.WriteDword(1); // ST_ROOT
 
                 uint checksum = CalculateChecksum(writer.ToArray());
@@ -397,7 +405,87 @@
             {
                 writer.WriteDword(0); // checksum placeholder
 
-                // TODO: create bitmap block
+                int numLongs = configuration.HD ? 110 : 55;
+                int firstHalfEndSector = entrySector <= rootBlockSector ? entrySector : rootBlockSector;
+                int secondHalfEndSector = entrySector <= rootBlockSector ? sectorCount : entrySector;
+                bool firstHalfFilled = entrySector <= rootBlockSector;
+                int fullLongs = (firstHalfEndSector - 2) / 32;
+                int rootLong = (rootBlockSector - 2) / 32; // the long which contains the root block bit (starts the second half)
+                int sectorEnd = firstHalfEndSector;
+                bool filled = firstHalfFilled;
+                int partialBits = (sectorEnd - 2) % 32;
+                bool switchHalves = rootLong == fullLongs && sectorEnd == firstHalfEndSector;
+
+                while (writer.Position < (numLongs + 1) * 4) // + 1 for the checksum long
+                {
+                    uint value = filled ? 0 : 0xffffffff;
+
+                    for (int i = 0; i < fullLongs; ++i)
+                        writer.WriteDword(value);
+
+                    if (partialBits != 0 || switchHalves)
+                    {
+                        uint bitmap = 0xffffffff;
+
+                        if (filled)
+                        {
+                            for (int i = 0; i < partialBits; ++i)
+                                bitmap &= ~(1u << i);
+                        }
+
+                        if (switchHalves)
+                        {
+                            // switch to second half
+                            filled = true; // the second half is always filled at the beginning
+                            sectorEnd = secondHalfEndSector;
+
+                            int i = (rootBlockSector - 2) % 32;
+                            int maxSectors = secondHalfEndSector - rootBlockSector;
+                            for (int j = 0; j < maxSectors && i < 32; ++j, ++i)
+                            {
+                                bitmap &= ~(1u << i);
+                            }
+
+                            filled = i + maxSectors > 32;
+                            switchHalves = false;
+                        }
+                        else
+                        {
+                            // If we didn't switch halves, we just found a partial long.
+                            // This means the following sectors are all free. So we can
+                            // just set the sectorEnd to the rootBlockSector (for first
+                            // half) or to sectorCount (for second half). Also reset the
+                            // filled flag to false.
+                            filled = false;
+                            sectorEnd = sectorEnd < rootBlockSector ? rootBlockSector : sectorCount;
+                            switchHalves = sectorEnd == rootBlockSector;
+                        }
+
+                        writer.WriteDword(bitmap);
+                    }
+                    else
+                    {
+                        // If we are here, no partial long was present and we also didn't
+                        // arrive at the second half. This means we either are at the end
+                        // of the stream or we finished exactly at a 32 bit boundary with
+                        // a filled state. In the latter case we have to invert the filled
+                        // state.
+                        if (writer.Position == (numLongs + 1) * 4)
+                            break;
+                        if (!filled)
+                            throw new InvalidOperationException("Invalid bitmap state.");
+                        filled = false;
+                        sectorEnd = sectorEnd < rootBlockSector ? rootBlockSector : sectorCount;
+                        switchHalves = sectorEnd == rootBlockSector;
+                    }
+
+                    int currentSectorOffset = (writer.Position - 4) * 8;
+                    fullLongs = (sectorEnd - currentSectorOffset - 2) / 32;
+                    partialBits = (sectorEnd - currentSectorOffset - 2) % 32;
+                }
+
+                // Fill the rest of the sector with zeros
+                writer.WriteBytes(Enumerable.Repeat((byte)0, 508 - numLongs * 4).ToArray());
 
                 uint checksum = CalculateChecksum(writer.ToArray());
                 writer.Position = 0;
