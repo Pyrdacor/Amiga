@@ -4,6 +4,12 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageProjectUrl>https://github.com/Pyrdacor/Amiga</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Pyrdacor/Amiga</RepositoryUrl>
+    <RepositoryType>GitHub</RepositoryType>
+    <PackageTags>Amiga ADF</PackageTags>
+    <Company>Robert Schneckenhaus</Company>
   </PropertyGroup>
 
 </Project>

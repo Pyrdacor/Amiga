@@ -1,0 +1,109 @@
+environment:
+  matrix:
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2022
+      configuration: Release
+    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+      configuration: Release
+    - APPVEYOR_BUILD_WORKER_IMAGE: macos-monterey
+      configuration: Release
+
+platform: Any CPU
+
+before_build:
+  - dotnet restore Amiga.sln --verbosity normal
+
+build:
+  parallel: true
+  project: Amiga.sln
+
+artifacts:
+  - path: Amiga-Windows.zip
+    name: Amiga-Windows
+  - path: Amiga-Windows32Bit.zip
+    name: Amiga-Windows32Bit
+  - path: Amiga-Linux.tar.gz
+    name: Amiga-Linux
+  - path: Amiga-Mac-ARM.zip
+    name: Amiga-Mac-ARM
+  - path: Amiga-Mac.zip
+    name: Amiga-Mac
+  - path: nuget\*.nupkg
+    name: NugetPackages
+
+after_build:
+    - ps: if ($env:APPVEYOR_REPO_TAG -eq $true) { ./publish.ps1 }
+    - ps: ./nuget.ps1
+
+test: off
+
+deploy:
+  - provider: GitHub
+    name: Amiga-Windows
+    artifact: Amiga-Windows
+    tag: $(APPVEYOR_REPO_TAG_NAME)
+    release: $(APPVEYOR_REPO_TAG_NAME)
+    description: 'Release $(APPVEYOR_REPO_TAG_NAME)'
+    auth_token:
+      secure: ku89dMTVkz+PE5bvxWQCLG9PbNTa9tQUsidZ/7726rLEZjIAvDcxEC668Ix9zYmw
+    draft: true
+    prerelease: true
+    force_update: true
+    on:
+      APPVEYOR_REPO_TAG: true
+  - provider: GitHub
+    name: Amiga-Windows32Bit
+    artifact: Amiga-Windows32Bit
+    tag: $(APPVEYOR_REPO_TAG_NAME)
+    release: $(APPVEYOR_REPO_TAG_NAME)
+    description: 'Release $(APPVEYOR_REPO_TAG_NAME)'
+    auth_token:
+      secure: ku89dMTVkz+PE5bvxWQCLG9PbNTa9tQUsidZ/7726rLEZjIAvDcxEC668Ix9zYmw
+    draft: true
+    prerelease: true
+    force_update: true
+    on:
+      APPVEYOR_REPO_TAG: true
+  - provider: GitHub
+    name: Amiga-Linux
+    artifact: Amiga-Linux
+    tag: $(APPVEYOR_REPO_TAG_NAME)
+    release: $(APPVEYOR_REPO_TAG_NAME)
+    description: 'Release $(APPVEYOR_REPO_TAG_NAME)'
+    auth_token:
+      secure: ku89dMTVkz+PE5bvxWQCLG9PbNTa9tQUsidZ/7726rLEZjIAvDcxEC668Ix9zYmw
+    draft: true
+    prerelease: true
+    force_update: true
+    on:
+      APPVEYOR_REPO_TAG: true
+  - provider: GitHub
+    name: Amiga-Mac
+    artifact: Amiga-Mac
+    tag: $(APPVEYOR_REPO_TAG_NAME)
+    release: $(APPVEYOR_REPO_TAG_NAME)
+    description: 'Release $(APPVEYOR_REPO_TAG_NAME)'
+    auth_token:
+      secure: ku89dMTVkz+PE5bvxWQCLG9PbNTa9tQUsidZ/7726rLEZjIAvDcxEC668Ix9zYmw
+    draft: true
+    prerelease: true
+    force_update: true
+    on:
+      APPVEYOR_REPO_TAG: true
+  - provider: GitHub
+    name: Amiga-Mac-ARM
+    artifact: Amiga-Mac-ARM
+    tag: $(APPVEYOR_REPO_TAG_NAME)
+    release: $(APPVEYOR_REPO_TAG_NAME)
+    description: 'Release $(APPVEYOR_REPO_TAG_NAME)'
+    auth_token:
+      secure: ku89dMTVkz+PE5bvxWQCLG9PbNTa9tQUsidZ/7726rLEZjIAvDcxEC668Ix9zYmw
+    draft: true
+    prerelease: true
+    force_update: true
+    on:
+      APPVEYOR_REPO_TAG: true
+  - provider: NuGet
+    name: NugetPackages
+    api_key:
+      secure: UrA/r0IO8UdL3u1kSb0ssskbIl5mvXwKbymZ8AEpnW6nDw4El+Gqnr5L+42MJRF5
+    skip_symbols: true
