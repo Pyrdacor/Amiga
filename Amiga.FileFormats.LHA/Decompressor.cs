@@ -8,26 +8,18 @@ namespace Amiga.FileFormats.LHA
 {
     internal class Decompressor
     {
-        public enum Method
+        public static readonly Dictionary<string, CompressionMethod> SupportedCompressions = new()
         {
-            None,
-            LH5,
-            LH6,
-            LH7
-        }
-
-        public static readonly Dictionary<string, Method> SupportedCompressions = new()
-        {
-            { "-lh0-", Method.None },
-            { "-lh5-", Method.LH5 },
-            { "-lh6-", Method.LH6 },
-            { "-lh7-", Method.LH7 }
+            { "-lh0-", CompressionMethod.None },
+            { "-lh5-", CompressionMethod.LH5 },
+            { "-lh6-", CompressionMethod.LH6 },
+            { "-lh7-", CompressionMethod.LH7 }
         };
 
         private readonly CRC crc = new();
         private readonly BinaryReader reader;
 
-        public Decompressor(BinaryReader reader, Method method, uint rawSize)
+        public Decompressor(BinaryReader reader, CompressionMethod method, uint rawSize)
         {
             this.reader = reader;
         }
