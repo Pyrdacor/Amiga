@@ -1,4 +1,6 @@
-﻿namespace Amiga.FileFormats.ADF
+﻿using Amiga.FileFormats.Core;
+
+namespace Amiga.FileFormats.ADF
 {
     internal class DirectoryBlock : BaseDirectory
     {

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -11,5 +11,9 @@
     <PackageTags>Amiga ADF</PackageTags>
     <Company>Robert Schneckenhaus</Company>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Amiga.FileFormats.Core\Amiga.FileFormats.Core.csproj" />
+  </ItemGroup>
 
 </Project>

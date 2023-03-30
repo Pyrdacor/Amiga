@@ -1,6 +1,8 @@
-﻿namespace Amiga.FileFormats.ADF
+﻿using Amiga.FileFormats.Core;
+
+namespace Amiga.FileFormats.ADF
 {
-    public interface IADF
+    public interface IADF : IVirtualFileSystem
     {
         FileSystem FileSystem { get; }
         bool InternationalMode { get; }
@@ -8,7 +10,6 @@
         bool LongFileNames { get; }
         byte[] BootCode { get; }
         int DiskSize { get; }
-        IDirectory RootDirectory { get; }
         DateTime LastModificationDate { get; }
         DateTime CreationDate { get; }
     }
