@@ -1,4 +1,5 @@
 ﻿using Amiga.FileFormats.Core;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using TimestampAndComment = System.Tuple<System.DateTime, string>;
 
@@ -11,6 +12,12 @@ namespace Amiga.FileFormats.LHA
 
         public IDirectory RootDirectory { get; }
 
+        private Archive()
+        {
+            var now = DateTime.Now;
+            RootDirectory = new ArchiveDirectory("<root>", null, new(), new(), now, now);
+        }
+
         public Archive(BinaryReader reader, FileInfo? fileInfo)
         {
             if ((reader.BaseStream.Length - reader.BaseStream.Position) < 21)
@@ -19,6 +26,8 @@ namespace Amiga.FileFormats.LHA
             var rootCreationDate = fileInfo?.CreationTime ?? DateTime.Now;
             var rootLastModificationDate = fileInfo?.LastWriteTime ?? rootCreationDate;
             var directories = new Dictionary<string, TimestampAndComment>();
+            var files = new Dictionary<string, ArchiveEntry>();
+            var emptyDirectories = new Dictionary<string, TimestampAndComment>();
 
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
@@ -50,15 +59,55 @@ namespace Amiga.FileFormats.LHA
 
             RootDirectory = new ArchiveDirectory("<root>", null, files, emptyDirectories, rootCreationDate, rootLastModificationDate);
         }
+        public static Archive CreateEmpty() => new();
+
+        public IDirectory AddEmptyDirectory(string path, DateTime? creationDate = null)
+            => AddEmptyDirectory((RootDirectory as ArchiveDirectory)!, EnsureCorrectPathSeparator(path), creationDate);
+
+        private IDirectory AddEmptyDirectory(ArchiveDirectory parent, string relativePath, DateTime? creationDate)
+        {
+            if (!relativePath.Contains('/'))
+                return parent.AddDirectory(relativePath, creationDate);
+            
+            var parts = relativePath.Split('/');
+            parent = parent.AddDirectory(parts[0], creationDate);
+            return AddEmptyDirectory(parent, string.Join("/", parts.Skip(1)), creationDate);
+        }
+
+        public IFile AddFile(string path, byte[] data, DateTime? creationDate = null, DateTime? lastChangeData = null, string? comment = null)
+        {
+            files.Add(path, )
+            return AddFile((RootDirectory as ArchiveDirectory)!, EnsureCorrectPathSeparator(path), data, creationDate, lastChangeData, comment);
+        }
+
+        private IFile AddFile(ArchiveDirectory parent, string relativePath, byte[] data, DateTime? creationDate, DateTime? lastChangeData, string? comment)
+        {
+            if (!relativePath.Contains('/'))
+                return parent.AddFile(relativePath, data, creationDate, lastChangeData, comment);
+
+            // Do this here so the directory hierarchy and file uses the exact same creation date.
+            creationDate ??= DateTime.Now;
+            lastChangeData ??= creationDate;
+            var parts = relativePath.Split('/');
+            parent = parent.AddDirectory(parts[0], creationDate);
+            return AddFile(parent, string.Join("/", parts.Skip(1)), data, creationDate, lastChangeData, comment);
+        }
+
+        private static string EnsureCorrectPathSeparator(string path) => path.Replace('\\', '/');
+
+        public void Write(Stream stream)
+        {
+            using var writer = new BinaryWriter(stream, Encoding.ASCII, true);
+            RootDirectory.Write(writer);
+        }
 
         private class ArchiveDirectory : IDirectory
         {
-            private readonly Dictionary<string, ArchiveEntry> allFiles;
             private readonly Lazy<Dictionary<string, ArchiveDirectory>> directories;            
             private readonly Lazy<Dictionary<string, IDirectoryEntry>> entries;
             private readonly Lazy<Dictionary<string, ArchiveFile>> files;
 
-            private class ArchiveFile : IFile
+            public class ArchiveFile : IFile
             {
                 public ArchiveFile(IDirectory parent, string name, string path,
                     DateTime creationDate, DateTime lastChangeDate, string comment,
@@ -88,6 +137,11 @@ namespace Amiga.FileFormats.LHA
                 public byte[] Data { get; }
 
                 public int Size => Data.Length;
+
+                public void Write(BinaryWriter writer)
+                {
+
+                }
             }
 
             public ArchiveDirectory(string name, IDirectory? parent, Dictionary<string, ArchiveEntry> files,
@@ -98,7 +152,7 @@ namespace Amiga.FileFormats.LHA
                 Name = name;
                 CreationDate = creationDate;
                 LastModificationDate = lastChangeDate ?? creationDate;
-                allFiles = files;
+                var allFiles = files;
                 directories = new(() =>
                 {
                     // Paths are case-insensitive on Amiga!
@@ -143,7 +197,7 @@ namespace Amiga.FileFormats.LHA
                 });
                 this.files = new(() => allFiles.Where(f => !f.Key.Contains('/')).Select(f => new ArchiveFile
                 (
-                    this, f.Key, f.Value.Path, f.Value.Timestamp, f.Value.Timestamp, f.Value.Comment, f.Value.Data
+                    this, f.Key, f.Value.Path, f.Value.Timestamp, f.Value.Timestamp, f.Value.Comment, f.Value.Decompressor!.Read()
                 )).ToDictionary(f => f.Name, f => f));
                 entries = new(() =>
                 {
@@ -196,6 +250,106 @@ namespace Amiga.FileFormats.LHA
                 files.Value.TryGetValue(name, out var file) ? file : null;
 
             public IEnumerable<IFile> GetFiles() => files.Value.Values;
+
+            public ArchiveFile AddFile(string name, byte[] data, DateTime? creationDate, DateTime? lastChangeDate, string? comment)
+            {
+                creationDate ??= DateTime.Now;
+                lastChangeDate ??= creationDate;
+                var file = new ArchiveFile(this, name, Path + "/" + name, creationDate.Value, lastChangeDate.Value, comment ?? "", data);
+                files.Value.Add(name, file);
+                entries.Value.Add(name, file);
+                return file;
+            }
+
+            public ArchiveDirectory AddDirectory(string name, DateTime? creationDate)
+            {
+                if (GetDirectory(name) is ArchiveDirectory directory)
+                    return directory;
+
+                creationDate ??= DateTime.Now;
+                directory = new ArchiveDirectory(name, this, new(), new(), creationDate.Value, creationDate.Value);
+                directories.Value.Add(name, directory);
+                entries.Value.Add(name, directory);
+                return directory;
+            }
+
+            public void Write(BinaryWriter writer)
+            {
+                foreach (var dir)
+            }
+        }
+
+        private static void WriteHeaderLevel0(BinaryWriter writer, CompressionMethod method, uint packedSize, uint originalSize, DateTime lastChangeDate, bool directory)
+        {
+            long position = writer.BaseStream.Position;
+
+            writer.Write((byte)0); // header size
+            writer.Write((byte)0); // checksum
+            writer.Write(Encoding.ASCII.GetBytes(Compressor.SupportedCompressions[method]));
+            writer.Write(packedSize);
+            writer.Write(directory ? 0 : originalSize);
+            writer.Write(Util.GetGenericTimestamp(lastChangeDate));
+            writer.Write((byte)(directory ? 0x10 : 0x20)); // attribute
+            writer.Write((byte)0); // level
+
+            //write_header_level0(char* data, LzHeader* hdr, char* pathname)
+            //{
+            //    int limit;
+            //    int name_length;
+            //    size_t header_size;
+
+            //    setup_put(data);
+            //    memset(data, 0, LZHEADER_STORAGE);
+
+            //    put_byte(0x00);             /* header size */
+            //    put_byte(0x00);             /* check sum */
+            //    put_bytes(hdr->method, 5);
+            //    put_longword(hdr->packed_size);
+            //    put_longword(hdr->original_size);
+            //    put_longword(unix_to_generic_stamp(hdr->unix_last_modified_stamp));
+            //    put_byte(hdr->attribute);
+            //    put_byte(hdr->header_level); /* level 0 */
+
+            //    /* write pathname (level 0 header contains the directory part) */
+            //    name_length = strlen(pathname);
+            //    if (generic_format)
+            //        limit = 255 - I_GENERIC_HEADER_SIZE + 2;
+            //    else
+            //        limit = 255 - I_LEVEL0_HEADER_SIZE + 2;
+
+            //    if (name_length > limit)
+            //    {
+            //        warning("the length of pathname \"%s\" is too long.", pathname);
+            //        name_length = limit;
+            //    }
+            //    put_byte(name_length);
+            //    put_bytes(pathname, name_length);
+            //    put_word(hdr->crc);
+
+            //    if (generic_format)
+            //    {
+            //        header_size = I_GENERIC_HEADER_SIZE + name_length - 2;
+            //        data[I_HEADER_SIZE] = header_size;
+            //        data[I_HEADER_CHECKSUM] = calc_sum(data + I_METHOD, header_size);
+            //    }
+            //    else
+            //    {
+            //        /* write old-style extend header */
+            //        put_byte(EXTEND_UNIX);
+            //        put_byte(CURRENT_UNIX_MINOR_VERSION);
+            //        put_longword(hdr->unix_last_modified_stamp);
+            //        put_word(hdr->unix_mode);
+            //        put_word(hdr->unix_uid);
+            //        put_word(hdr->unix_gid);
+
+            //        /* size of extended header is 12 */
+            //        header_size = I_LEVEL0_HEADER_SIZE + name_length - 2;
+            //        data[I_HEADER_SIZE] = header_size;
+            //        data[I_HEADER_CHECKSUM] = calc_sum(data + I_METHOD, header_size);
+            //    }
+
+            //    return header_size + 2;
+            //}
         }
 
         private class ArchiveEntry
