@@ -17,16 +17,16 @@ build:
   project: Amiga.sln
 
 artifacts:
-  - path: Amiga-Windows.zip
-    name: Amiga-Windows
-  - path: Amiga-Windows32Bit.zip
-    name: Amiga-Windows32Bit
-  - path: Amiga-Linux.tar.gz
-    name: Amiga-Linux
-  - path: Amiga-Mac-ARM.zip
-    name: Amiga-Mac-ARM
-  - path: Amiga-Mac.zip
-    name: Amiga-Mac
+  - path: AmigaTools-Windows-x64.zip
+    name: AmigaTools-Windows-x64
+  - path: AmigaTools-Windows-x86.zip
+    name: AmigaTools-Windows-x86
+  - path: AmigaTools-Linux.tar.gz
+    name: AmigaTools-Linux
+  - path: AmigaTools-Mac-Arm.zip
+    name: AmigaTools-Mac-Arm
+  - path: AmigaTools-Mac-x64.zip
+    name: AmigaTools-Mac-x64
   - path: nuget\*.nupkg
     name: NugetPackages
 
