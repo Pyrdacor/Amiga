@@ -121,49 +121,57 @@
             int bitCount = 0;
             byte subBitBuffer = 0;
             int compressedSize = 0;
+            bool cannotPack = false;
 
-            for (int i = 0; i < HashSize; ++i)
+            try
             {
-                hash[i] = new Hash();
+	            for (int i = 0; i < HashSize; ++i)
+	            {
+		            hash[i] = new Hash();
+	            }
+
+	            int token = InitHash(text, position);
+	            InsertHash(token, position);
+
+	            while (remainder > 0 && !cannotPack)
+	            {
+		            last = match;
+
+		            NextToken(ref token, ref position);
+		            SearchDict(token, position, last.Length - 1, ref match);
+		            InsertHash(token, position);
+
+		            if (match.Length > last.Length || last.Length < Threshold)
+		            {
+			            // output a letter
+			            Output(text[position - 1], 0);
+			            count++;
+		            }
+		            else
+		            {
+			            // output length and offset
+			            Output((ushort)(last.Length + (256 - Threshold)), (ushort)((last.Offset - 1) & (dictSize - 1)));
+			            count += last.Length;
+			            --last.Length;
+
+			            while (--last.Length > 0)
+			            {
+				            NextToken(ref token, ref position);
+				            InsertHash(token, position);
+			            }
+
+			            NextToken(ref token, ref position);
+			            SearchDict(token, position, Threshold - 1, ref match);
+			            InsertHash(token, position);
+		            }
+	            }
+
+	            EncodeEnd();
             }
-
-            int token = InitHash(text, position);
-            InsertHash(token, position);
-
-            while (remainder > 0 && !unpackable)
+            finally
             {
-                last = match;
-
-                NextToken(ref token, ref position);
-                SearchDict(token, position, last.Length - 1, ref match);
-                InsertHash(token, position);
-
-                if (match.Length > last.Length || last.Length < Threshold)
-                {
-                    // output a letter
-                    Output(text[position - 1], 0);
-                    count++;
-                }
-                else
-                {
-                    // output length and offset
-                    Output((ushort)(last.Length + (256 - Threshold)), (ushort)((last.Offset - 1) & (dictSize - 1)));
-                    count += last.Length;
-                    --last.Length;
-
-                    while (--last.Length > 0)
-                    {
-                        NextToken(ref token, ref position);
-                        InsertHash(token, position);
-                    }
-
-                    NextToken(ref token, ref position);
-                    SearchDict(token, position, Threshold - 1, ref match);
-                    InsertHash(token, position);
-                }
+                unpackable = cannotPack;
             }
-
-            EncodeEnd();
 
             return crc;
 
@@ -299,7 +307,7 @@
 
             void EncodeEnd()
             {
-                if (!unpackable)
+                if (!cannotPack)
                 {
                     SendBlock();
                     PutBits(CharBits - 1, 0); // flush remaining bits
@@ -319,7 +327,7 @@
                     {
                         SendBlock();
 
-                        if (unpackable)
+                        if (cannotPack)
                             return;
 
                         outputPosition = 0;
@@ -413,7 +421,7 @@
                         EncodeWithTree(buffer[position++]);
                     }
 
-                    if (unpackable)
+                    if (cannotPack)
                         return;
                 }
                 for (int i = 0; i < NC; i++)
@@ -587,7 +595,7 @@
                     }
                     else
                     {
-                        unpackable = true;
+	                    cannotPack = true;
                     }
 
                     subBitBuffer = 0;

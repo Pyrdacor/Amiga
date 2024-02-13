@@ -1,0 +1,84 @@
+body {
+	background-color    : white;
+}
+
+a {
+	text-decoration     : none;
+}
+
+a:link {
+	color               : blue;
+	text-decoration     : none;
+}
+
+a:visited {
+	color               : green;
+	text-decoration     : none;
+}
+
+a:hover {
+	color               : red;
+	text-decoration     : underline;
+}
+
+h1.title {
+	background-image    : url(/web/20070102004758im_/http://homepage1.nifty.com/dangan/Content/title_back.png);
+	background-repeat   : norepeat;
+	height              : 38px;
+	width               : 480px;
+	font-weight         : bold;
+	font-style          : italic;
+	font-family         : Times, serif;
+	font-size           : 31px;
+	color               : white;
+}
+
+div.main {
+	width               : 512px;
+}
+
+div.headline1 {
+	font-weight         : bold;
+	font-family         : Times;
+	font-size           : x-large;
+}
+
+div.headline2 {
+	font-weight         : bold;
+	font-family         : Times;
+}
+
+span.new {
+	color               : green;
+	font-family         : Monospace;
+}
+
+span.add {
+	color               : blue;
+	font-family         : Monospace;
+}
+
+span.fix {
+	color               : red;
+	font-family         : Monospace;
+}
+
+/*
+     FILE ARCHIVED ON 00:47:58 Jan 02, 2007 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 14:25:53 Feb 13, 2024.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+*/
+/*
+playback timings (ms):
+  exclusion.robots: 0.104
+  exclusion.robots.policy: 0.091
+  cdx.remote: 0.134
+  esindex: 0.011
+  LoadShardBlock: 182.95 (6)
+  PetaboxLoader3.datanode: 202.827 (7)
+  load_resource: 185.123
+  PetaboxLoader3.resolve: 99.711
+*/
