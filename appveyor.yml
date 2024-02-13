@@ -34,7 +34,7 @@ after_build:
     - ps: if ($env:APPVEYOR_REPO_TAG -eq $true) { ./publish.ps1 }
     - ps: ./nuget.ps1
 
-test: off
+test: false
 
 deploy:
   - provider: GitHub
@@ -105,5 +105,5 @@ deploy:
   - provider: NuGet
     name: NugetPackages
     api_key:
-      secure: UrA/r0IO8UdL3u1kSb0ssskbIl5mvXwKbymZ8AEpnW6nDw4El+Gqnr5L+42MJRF5
+      secure: oL/d8rm+IPuxW+jM+Wse6Jydr38ctRcYj6Exot+ISFw4UGJbAoFeORwGQn7c8NQo
     skip_symbols: true
