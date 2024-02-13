@@ -12,5 +12,6 @@ namespace Amiga.FileFormats.ADF
         int DiskSize { get; }
         DateTime LastModificationDate { get; }
         DateTime CreationDate { get; }
+        string DiskName { get; }
     }
 }
