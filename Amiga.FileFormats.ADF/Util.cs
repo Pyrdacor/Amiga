@@ -20,7 +20,7 @@
                     days += 365;
             }
 
-            if (dateTime.Month != 0)
+            if (dateTime.Month > 1)
             {
                 int index;
 
@@ -29,13 +29,13 @@
                 else
                     index = 0;
 
-                for (int m = 0; m < dateTime.Month; ++m)
+                for (int m = 0; m < dateTime.Month - 1; ++m)
                 {
                     days = (uint)(days + DaysPerMonth[index, m]);
                 }
             }
 
-            days = (uint)(days + dateTime.Day);
+            days = (uint)(Math.Max(2, days + dateTime.Day) - 2);
 
             writer.WriteDword(days);
             writer.WriteDword((uint)(dateTime.Hour * 60 + dateTime.Minute));
@@ -44,7 +44,7 @@
 
         public static DateTime ReadDateTime(DataReader reader)
         {
-            uint days = reader.ReadDword();
+            uint days = 1 + reader.ReadDword();
             uint minutes = reader.ReadDword();
             uint ticks = reader.ReadDword();
 
@@ -83,7 +83,7 @@
                 days = (uint)(days - daysPerMonth);
             }
 
-            return new DateTime(year, month, day, (int)minutes / 60, (int)minutes % 60, (int)ticks / 50, ((int)ticks % 50) * 20);
+            return new DateTime(year, month + 1, day + 1, (int)minutes / 60, (int)minutes % 60, (int)ticks / 50, ((int)ticks % 50) * 20);
         }
     }
 }

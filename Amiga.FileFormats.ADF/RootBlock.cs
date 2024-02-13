@@ -34,7 +34,7 @@ namespace Amiga.FileFormats.ADF
             bool dirCache, bool internationalMode, bool allowInvalidChecksum)
             : base(sectorDataProvider, dirCache, internationalMode, allowInvalidChecksum)
         {
-            // The bootblock is always located in the first two blocks.
+            // The rootblock is always located in the center of the disk (sector 880 or 1760).
             Sector = hd ? 1760u : 880u;
             FileSystem = fileSystem;
             var blockData = sectorDataProvider.GetSectorData((int)Sector, 1);

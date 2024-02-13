@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Amiga.FileFormats.ADF
+﻿namespace Amiga.FileFormats.ADF
 {
     public enum ADFWriteResult
     {
@@ -12,7 +10,7 @@ namespace Amiga.FileFormats.ADF
     }
 
     // Note: The reader may detect long filenames or directory cache settings but we won't support
-    // them when writing. To ease the data creation but also as it isn't the valuable in my opinion.
+    // them when writing. To ease the data creation but also as it isn't that valuable in my opinion.
     public static class ADFWriter
     {
         private static readonly byte[] DefaultBootCode = new byte[82]
@@ -72,6 +70,7 @@ namespace Amiga.FileFormats.ADF
                 BootCode = bootable ? DefaultBootCode : null
             };
 
+            Directory.CreateDirectory(Path.GetDirectoryName(adfFilePath));
             using var stream = File.Create(adfFilePath);
             int rootLength = directoryPath.Length;
 
