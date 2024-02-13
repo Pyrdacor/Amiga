@@ -38,8 +38,8 @@ test: false
 
 deploy:
   - provider: GitHub
-    name: Amiga-Windows
-    artifact: Amiga-Windows
+    name: AmigaTools-Windows-x64
+    artifact: AmigaTools-Windows-x64
     tag: $(APPVEYOR_REPO_TAG_NAME)
     release: $(APPVEYOR_REPO_TAG_NAME)
     description: 'Release $(APPVEYOR_REPO_TAG_NAME)'
@@ -51,8 +51,8 @@ deploy:
     on:
       APPVEYOR_REPO_TAG: true
   - provider: GitHub
-    name: Amiga-Windows32Bit
-    artifact: Amiga-Windows32Bit
+    name: AmigaTools-Windows-x86
+    artifact: AmigaTools-Windows-x86
     tag: $(APPVEYOR_REPO_TAG_NAME)
     release: $(APPVEYOR_REPO_TAG_NAME)
     description: 'Release $(APPVEYOR_REPO_TAG_NAME)'
@@ -64,8 +64,8 @@ deploy:
     on:
       APPVEYOR_REPO_TAG: true
   - provider: GitHub
-    name: Amiga-Linux
-    artifact: Amiga-Linux
+    name: AmigaTools-Linux
+    artifact: AmigaTools-Linux
     tag: $(APPVEYOR_REPO_TAG_NAME)
     release: $(APPVEYOR_REPO_TAG_NAME)
     description: 'Release $(APPVEYOR_REPO_TAG_NAME)'
@@ -77,8 +77,8 @@ deploy:
     on:
       APPVEYOR_REPO_TAG: true
   - provider: GitHub
-    name: Amiga-Mac
-    artifact: Amiga-Mac
+    name: AmigaTools-Mac-x64
+    artifact: AmigaTools-Mac-x64
     tag: $(APPVEYOR_REPO_TAG_NAME)
     release: $(APPVEYOR_REPO_TAG_NAME)
     description: 'Release $(APPVEYOR_REPO_TAG_NAME)'
@@ -90,8 +90,8 @@ deploy:
     on:
       APPVEYOR_REPO_TAG: true
   - provider: GitHub
-    name: Amiga-Mac-ARM
-    artifact: Amiga-Mac-ARM
+    name: AmigaTools-Mac-Arm
+    artifact: AmigaTools-Mac-Arm
     tag: $(APPVEYOR_REPO_TAG_NAME)
     release: $(APPVEYOR_REPO_TAG_NAME)
     description: 'Release $(APPVEYOR_REPO_TAG_NAME)'
