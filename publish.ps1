@@ -21,7 +21,7 @@ if ($isWindows) {
   Write-Host Pack zips for Mac
   sudo xcode-select -s /Applications/Xcode-13.2.1.app
   Start-Process -FilePath codesign -Wait -WorkingDirectory . -ArgumentList '-s','-','--force','--verbose','--deep','--no-strict','"./AmigaAdf/bin/Any CPU/Release/net7.0/osx-x64/publish/AmigaAdf"'
-  7z a AmigaTools-Mac-Intel.zip "./AmigaAdf/bin/Any CPU/Release/net7.0/osx-x64/publish/AmigaAdf" -mx9
+  7z a AmigaTools-Mac-x64.zip "./AmigaAdf/bin/Any CPU/Release/net7.0/osx-x64/publish/AmigaAdf" -mx9
   Start-Process -FilePath codesign -Wait -WorkingDirectory . -ArgumentList '-s','-','--force','--verbose','--deep','--no-strict','"./AmigaAdf/bin/Any CPU/Release/net7.0/osx-arm64/publish/AmigaAdf"'
   7z a AmigaTools-Mac-Arm.zip "./AmigaAdf/bin/Any CPU/Release/net7.0/osx-arm64/publish/AmigaAdf" -mx9
 }
