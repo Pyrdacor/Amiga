@@ -54,7 +54,7 @@
             return new DateTime(year, month, day, hour, minute, second);
         }
 
-        private static uint GetGenericTimestamp(DateTime dateTime)
+        public static uint GetGenericTimestamp(DateTime dateTime)
         {
             uint year = (uint)dateTime.Year;
             if (year < 1980)
