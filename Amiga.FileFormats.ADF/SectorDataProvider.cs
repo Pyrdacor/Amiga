@@ -19,10 +19,11 @@
 
         public byte[] GetSectorData(IEnumerable<int> sectorIndices)
         {
-            byte[] data = new byte[sectorIndices.Count() * SectorSize];
+            var sectorIndexList = sectorIndices.ToList();
+			byte[] data = new byte[sectorIndexList.Count * SectorSize];
             int i = 0;
 
-            foreach (var blockIndex in sectorIndices)
+            foreach (var blockIndex in sectorIndexList)
             {
                 Buffer.BlockCopy(diskData, blockIndex * SectorSize, data, i++ * SectorSize, SectorSize);
             }
