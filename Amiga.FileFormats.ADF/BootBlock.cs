@@ -2,13 +2,13 @@
 {
     internal class BootBlock
     {
-        public const int Size = 1024; // always for floppies
+        public const int Size = 2 * SectorDataProvider.SectorSize; // always for floppies
         public char[] DiskType { get; }
         public FileSystem FileSystem { get; }
         public bool InternationalMode { get; }
         public bool DirectoryCache { get; }
         public bool LongFileNames { get; }
-        public string BootCode { get; }
+        public byte[] BootCode { get; }
 
         public BootBlock(SectorDataProvider sectorDataProvider, bool allowInvalidChecksum)
         {
@@ -47,10 +47,40 @@
 
             uint rootBlockSector = reader.ReadDword();
 
-            if (rootBlockSector != 880) // this is also true for HD disks
+            if (rootBlockSector != 880) // this is also set for HD disks even though it's wrong
                 throw new InvalidDataException("Invalid rootblock sector location.");
 
-            BootCode = new string(reader.ReadChars(Size - 12)).TrimEnd('\0');
+            BootCode = reader.ReadBytes(Size - 12);
+        }
+
+        public static void Write(ADFWriter.WriteSectors sectorWriter, ADFWriterConfiguration configuration)
+        {
+            sectorWriter(0, 2, writer =>
+            {
+                int flags = (int)configuration.FileSystem;
+                if (configuration.LongFileNames)
+                    flags += 6;
+                else if (configuration.DirectoryCache)
+                    flags += 4;
+                else if (configuration.InternationalMode)
+                    flags += 2;
+
+                writer.WriteChars(new char[3] { 'D', 'O', 'S' });
+                writer.WriteByte((byte)flags);
+                int checksumPosition = writer.Position;
+                writer.WriteDword(0); // checksum placeholder
+                writer.WriteDword(880); // rootblock sector
+
+                var bootCode = new byte[Size - 12];
+                if (configuration.BootCode != null)
+                    Buffer.BlockCopy(configuration.BootCode, 0, bootCode, 0, Math.Min(bootCode.Length, configuration.BootCode.Length));
+                writer.WriteBytes(bootCode);
+
+                uint checksum = CalculateChecksum(writer.ToArray());
+                writer.Position = checksumPosition;
+                writer.WriteDword(checksum);
+                writer.Position = Size;
+            });
         }
 
         private static uint CalculateChecksum(byte[] data)

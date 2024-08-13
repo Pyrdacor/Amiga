@@ -34,5 +34,42 @@
 
             Buffer.BlockCopy(blockData, 24, Data, 0, Data.Length);
         }
+
+        public static void Write(DataWriter writer, int fileHeaderSector, int index, int nextDataSector, byte[] data, ref int dataIndex, FileSystem fileSystem)
+        {
+            int maxSize = data.Length - dataIndex;
+
+            if (fileSystem == FileSystem.FFS)
+            {
+                int size = Math.Min(SectorDataProvider.SectorSize, maxSize);
+                writer.WriteBytes(data, dataIndex, size);
+                dataIndex += size;
+            }
+            else
+            {
+                writer.WriteDword(8); // T_DATA
+                writer.WriteDword((uint)fileHeaderSector);
+                writer.WriteDword((uint)index);
+                int size = Math.Min(SectorDataProvider.SectorSize - 24, maxSize);
+                writer.WriteDword((uint)size);
+                writer.WriteDword((uint)nextDataSector);
+                int checksumPosition = writer.Position;
+                writer.WriteDword(0); // checksum placeholder
+
+                writer.WriteBytes(data, dataIndex, size);
+                dataIndex += size;
+
+                if (size < SectorDataProvider.SectorSize - 24)
+                {
+                    int sizeToFill = SectorDataProvider.SectorSize - 24 - size;
+                    writer.WriteBytes(Enumerable.Repeat((byte)0, sizeToFill).ToArray());
+                }
+
+                uint checksum = RootBlock.CalculateChecksum(writer.ToArray());
+                writer.Position = checksumPosition;
+                writer.WriteDword(checksum);
+                writer.Position = SectorDataProvider.SectorSize;
+            }
+        }
     }
 }

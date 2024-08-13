@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Amiga.FileFormats.ADF
+﻿namespace Amiga.FileFormats.ADF
 {
     public interface IADF
     {
@@ -12,7 +6,8 @@ namespace Amiga.FileFormats.ADF
         bool InternationalMode { get; }
         bool DirectoryCache { get; }
         bool LongFileNames { get; }
-        string BootCode { get; }
+        byte[] BootCode { get; }
+        int DiskSize { get; }
         IDirectory RootDirectory { get; }
         DateTime LastModificationDate { get; }
         DateTime CreationDate { get; }

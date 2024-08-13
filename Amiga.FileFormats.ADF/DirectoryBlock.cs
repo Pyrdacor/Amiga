@@ -82,5 +82,64 @@
             if (reader.ReadDword() != 2) // ST_USERDIR
                 throw new InvalidDataException("Invalid directory block subtype.");
         }
+
+        public static void Write(DataWriter writer, string name, int sector,
+            SortedList<uint, int> hashTable, uint nextHashSector, uint parentSector,
+            DateTime dateTime)
+        {
+            writer.WriteDword(2); // T_HEADER
+            writer.WriteDword((uint)sector);
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            int checksumPosition = writer.Position;
+            writer.WriteDword(0); // checksum placeholder
+
+            // Write the hash table
+            for (uint i = 0; i < 72; ++i)
+            {
+                writer.WriteDword(hashTable.TryGetValue(i, out var hashSector) ? (uint)hashSector : 0);
+            }
+
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+
+            // TODO: for now we don't support comments but we add the code to make it easier later
+            string comment = "";
+            comment = comment.Length > 79 ? comment[..79] : comment;
+            writer.WriteByte((byte)comment.Length);
+            writer.WriteChars(comment.PadRight(79, '\0').ToCharArray());
+
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+
+            Util.WriteDateTime(writer, dateTime); // last access date
+
+            name = name.Length > 30 ? name[..30] : name;
+            writer.WriteByte((byte)name.Length);
+            writer.WriteChars(name.PadRight(30, '\0').ToCharArray());
+            writer.WriteByte(0);
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            writer.WriteDword(0); // we don't support creating links
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+            writer.WriteDword(0);
+
+            writer.WriteDword(nextHashSector);
+            writer.WriteDword(parentSector);
+            writer.WriteDword(0); // we don't support directory caching
+            writer.WriteDword(2); // ST_USERDIR
+
+            uint checksum = RootBlock.CalculateChecksum(writer.ToArray());
+            writer.Position = checksumPosition;
+            writer.WriteDword(checksum);
+            writer.Position = Size;
+        }
     }
 }

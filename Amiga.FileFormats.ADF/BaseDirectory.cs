@@ -127,7 +127,7 @@
             }
         }
 
-        private uint HashName(string name)
+        private protected static uint HashName(string name, bool internationalMode)
         {
             uint hash = (uint)name.Length;
             uint l = hash;
@@ -135,7 +135,7 @@
             for (int i = 0; i < l; ++i)
             {
                 hash *= 13;
-                hash += (uint)ToUpper(name[i]);
+                hash += (uint)ToUpper(name[i], internationalMode);
                 hash &= 0x7ff;
             }
             hash %= 72;
@@ -143,7 +143,9 @@
             return hash;
         }
 
-        private int ToUpper(char c)
+        private uint HashName(string name) => HashName(name, internationalMode);
+
+        private static int ToUpper(char c, bool internationalMode)
         {
             if (internationalMode)
             {

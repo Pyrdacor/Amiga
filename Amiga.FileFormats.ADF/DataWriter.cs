@@ -68,9 +68,21 @@ namespace Amiga.FileFormats.ADF
             }
         }
 
+        public void WriteBytes(byte[] bytes, int offset, int count)
+        {
+            WriteBytes(new Span<byte>(bytes, offset, count).ToArray());
+        }
+
         public void WriteChars(char[] chars)
         {
             WriteBytes(Encoding.ASCII.GetBytes(chars));
         }
+
+        public void CopyTo(byte[] destination, int destinationOffset, int count)
+        {
+            Array.Copy(data.ToArray(), 0, destination, destinationOffset, count);
+        }
+
+        public byte[] ToArray() => data.ToArray();
     }
 }
