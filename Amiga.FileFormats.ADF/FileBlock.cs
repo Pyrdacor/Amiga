@@ -9,8 +9,8 @@ namespace Amiga.FileFormats.ADF
         public IDirectory? Parent { get; }
         public string Name { get; }
         public string Path => Parent!.Path + Name;
-        public DateTime CreationDate { get; }
-        public DateTime LastModificationDate { get; }
+        public DateTime? CreationDate { get; }
+        public DateTime? LastModificationDate { get; }
         public string Comment { get; }
         public byte[] Data { get; }
         public int Size => Data.Length;

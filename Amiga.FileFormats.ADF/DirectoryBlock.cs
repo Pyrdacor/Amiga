@@ -6,8 +6,8 @@ namespace Amiga.FileFormats.ADF
     {
         private readonly RootBlock rootBlock;
         public const int Size = SectorDataProvider.SectorSize;
-        public override DateTime LastModificationDate { get; }
-        public override DateTime CreationDate => rootBlock.CreationDate;
+        public override DateTime? LastModificationDate { get; }
+        public override DateTime? CreationDate => rootBlock.CreationDate;
         public override IDirectory? Parent { get; }
         public override string Name { get; }
         public override string Path => Parent!.Path + Name + "/";

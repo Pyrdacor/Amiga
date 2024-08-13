@@ -10,8 +10,8 @@ namespace Amiga.FileFormats.ADF
         bool LongFileNames { get; }
         byte[] BootCode { get; }
         int DiskSize { get; }
-        DateTime LastModificationDate { get; }
-        DateTime CreationDate { get; }
+        DateTime? LastModificationDate { get; }
+        DateTime? CreationDate { get; }
         string DiskName { get; }
     }
 }

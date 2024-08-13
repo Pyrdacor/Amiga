@@ -5,8 +5,8 @@
         IDirectory? Parent { get; }
         string Name { get; }
         string Path { get; }
-        DateTime CreationDate { get; }
-        DateTime LastModificationDate { get; }
+        DateTime? CreationDate { get; }
+        DateTime? LastModificationDate { get; }
         string Comment { get; }
     }
 }

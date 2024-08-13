@@ -20,9 +20,9 @@ namespace Amiga.FileFormats.ADF
         }
 
         public const int Size = SectorDataProvider.SectorSize;
-        public override DateTime LastModificationDate { get; }
+        public override DateTime? LastModificationDate { get; }
         public DateTime DiskLastModificationDate { get; }
-        public override DateTime CreationDate { get; }
+        public override DateTime? CreationDate { get; }
         public override IDirectory? Parent => null;
         public override string Name { get; } = "<root>";
         public override string Path => "/";

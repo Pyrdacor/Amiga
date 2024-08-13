@@ -77,7 +77,7 @@
                     .ToArray()
                 : null;
 
-            Directory.CreateDirectory(Path.GetDirectoryName(adfFilePath));
+            Directory.CreateDirectory(Path.GetDirectoryName(adfFilePath)!);
             using var stream = File.Create(adfFilePath);
             int rootLength = directoryPath.Length;
 

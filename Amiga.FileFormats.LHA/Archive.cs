@@ -1,7 +1,6 @@
 ﻿using Amiga.FileFormats.Core;
-using System.IO;
 using System.Text;
-using TimestampAndComment = System.Tuple<System.DateTime, string>;
+using TimestampAndComment = System.Tuple<System.DateTime?, string>;
 
 namespace Amiga.FileFormats.LHA
 {
@@ -109,7 +108,7 @@ namespace Amiga.FileFormats.LHA
             public class ArchiveFile : IFile
             {
                 public ArchiveFile(IDirectory parent, string name, string path,
-                    DateTime creationDate, DateTime lastChangeDate, string comment,
+                    DateTime? creationDate, DateTime? lastChangeDate, string comment,
                     byte[] data)
                 {
                     Parent = parent;
@@ -127,9 +126,9 @@ namespace Amiga.FileFormats.LHA
 
                 public string Path { get; }
 
-                public DateTime CreationDate { get; }
+                public DateTime? CreationDate { get; }
 
-                public DateTime LastModificationDate { get; }
+                public DateTime? LastModificationDate { get; }
 
                 public string Comment { get; }
 
@@ -189,7 +188,7 @@ namespace Amiga.FileFormats.LHA
                         var creationDate = thisDir?.DirInfo?.Item1 ?? CreationDate;
                         var lastModificationDate = thisDir?.DirInfo?.Item1 ?? LastModificationDate;
                         directories.Add(group.Key, new ArchiveDirectory(group.Key, this, files, emptyDirs,
-                            creationDate, lastModificationDate));
+                            creationDate ?? DateTime.UtcNow, lastModificationDate));
                     }
 
                     return directories;
@@ -215,9 +214,9 @@ namespace Amiga.FileFormats.LHA
 
             public string Path => Parent is null ? "/" : Parent.Path + "/" + Name;
 
-            public DateTime CreationDate { get; }
+            public DateTime? CreationDate { get; }
 
-            public DateTime LastModificationDate { get; }
+            public DateTime? LastModificationDate { get; }
 
             public string Comment => "";
 
@@ -303,7 +302,7 @@ namespace Amiga.FileFormats.LHA
                     compressedData = compressedStream.ToArray();
                 }
 
-                WriteHeader(writer, file.Parent?.Path ?? "", file.Name, method, (uint)compressedData.Length, (uint)file.Data.Length, file.LastModificationDate, false, crc);
+                WriteHeader(writer, file.Parent?.Path ?? "", file.Name, method, (uint)compressedData.Length, (uint)file.Data.Length, file.LastModificationDate ?? DateTime.UtcNow, false, crc);
                 writer.Write(compressedData);
             }
 
@@ -317,7 +316,7 @@ namespace Amiga.FileFormats.LHA
                 foreach (var directory in directories.Value)
                 {
                     if (canHaveEmptyDirectories && !directory.Value.ContainsAnyFiles()) // store empty directory
-                        WriteHeader(writer, directory.Value.Parent?.Path ?? "", directory.Value.Name, CompressionMethod.None, 0, 0, directory.Value.LastModificationDate, true, null);
+                        WriteHeader(writer, directory.Value.Parent?.Path ?? "", directory.Value.Name, CompressionMethod.None, 0, 0, directory.Value.LastModificationDate ?? DateTime.UtcNow, true, null);
                     else // process sub directory entries
                         directory.Value.Write(writer, canHaveEmptyDirectories);
                 }
@@ -398,7 +397,7 @@ namespace Amiga.FileFormats.LHA
             public Decompressor? Decompressor { get; }
             public string Path { get; }
             public bool Omit { get; } // "-lhd-" is often used to just store information, we may omit them in the file hierarchy
-            public DateTime Timestamp { get; }
+            public DateTime? Timestamp { get; }
             public string Comment { get; }
 
             public ArchiveEntry(BinaryReader reader)
@@ -484,23 +483,23 @@ namespace Amiga.FileFormats.LHA
                 int checksum = header[1];
                 int attribute = header[19]; // TODO: use later?
                 int pathLength = reader.ReadByte();
-                AddToHeaderCheckSum(headerChecksum, header[2..]);
-                AddToHeaderCheckSum(headerChecksum, (byte)pathLength);
+				headerChecksum = AddToHeaderCheckSum(headerChecksum, header[2..]);
+				headerChecksum = AddToHeaderCheckSum(headerChecksum, (byte)pathLength);
                 var nameBytes = reader.ReadBytes(pathLength);
-                AddToHeaderCheckSum(headerChecksum, nameBytes);
+				headerChecksum = AddToHeaderCheckSum(headerChecksum, nameBytes);
                 path = Encoding.ASCII.GetString(nameBytes);
 
                 ushort ReadAndCrcWord()
                 {
                     var bytes = reader.ReadBytes(2);
-                    AddToHeaderCheckSum(headerChecksum, bytes);
+					headerChecksum = AddToHeaderCheckSum(headerChecksum, bytes);
                     return Util.ReadLEWord(bytes, 0);
                 }
 
                 byte ReadAndCrcByte()
                 {
                     byte b = reader.ReadByte();
-                    AddToHeaderCheckSum(headerChecksum, b);
+					headerChecksum = AddToHeaderCheckSum(headerChecksum, b);
                     return b;
                 }
 
@@ -512,7 +511,7 @@ namespace Amiga.FileFormats.LHA
                 if (remainingSize > 3)
                 {
                     var remainingHeaderBytes = reader.ReadBytes(remainingSize - 3);
-                    AddToHeaderCheckSum(headerChecksum, remainingHeaderBytes);
+					headerChecksum = AddToHeaderCheckSum(headerChecksum, remainingHeaderBytes);
                 }
 
                 if (headerChecksum != checksum)
@@ -590,7 +589,7 @@ namespace Amiga.FileFormats.LHA
             private void ParseLevel2Header(byte[] header, BinaryReader reader, out string path, out ushort? dataCrc,
                 out int osSpecifier, out bool omit, out string comment, out int extensionSize)
             {
-
+                throw new NotImplementedException("Level 2 headers are not supported yet.");
             }
 
             private int ReadExtension(BinaryReader reader, int size, out int type, out string? value, out ushort? crc)

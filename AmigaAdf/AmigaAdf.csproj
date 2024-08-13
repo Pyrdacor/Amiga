@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<RuntimeIdentifiers>win-x64;win-x86;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Amiga.FileFormats.ADF\Amiga.FileFormats.ADF.csproj" />
+    <ProjectReference Include="..\Amiga.FileFormats.Core\Amiga.FileFormats.Core.csproj" />
     <ProjectReference Include="..\AmigaConsole\AmigaConsole.csproj" />
   </ItemGroup>
 

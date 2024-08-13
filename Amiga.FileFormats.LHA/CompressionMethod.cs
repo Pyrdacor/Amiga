@@ -5,6 +5,7 @@
         None,
         LH5,
         LH6,
-        LH7
+        LH7,
+        LZ5
     }
 }

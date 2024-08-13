@@ -48,7 +48,7 @@
 			return (uint)(elapsedTicks / TimeSpan.TicksPerSecond);
 		}
 
-        public static DateTime ReadGenericTimestamp(byte[] data, int offset)
+        public static DateTime? ReadGenericTimestamp(byte[] data, int offset)
         {
             /* Generic timestamp format
                  31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16
@@ -58,6 +58,10 @@
             */
 
             uint value = ReadLELong(data, offset);
+
+            if (value == 0) // no date given
+                return null;
+
             int year = 1980 + (int)(value >> 25); // upper 7 bits
             int month = (int)(value >> 21) & 0xf; // next 4 bits
             int day = (int)(value >> 16) & 0x1f; // next 5 bits

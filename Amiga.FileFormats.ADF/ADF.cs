@@ -19,9 +19,9 @@ namespace Amiga.FileFormats.ADF
 
         public IDirectory RootDirectory => rootBlock;
 
-        public DateTime LastModificationDate => rootBlock.DiskLastModificationDate;
+        public DateTime? LastModificationDate => rootBlock.DiskLastModificationDate;
 
-        public DateTime CreationDate => rootBlock.CreationDate;
+        public DateTime? CreationDate => rootBlock.CreationDate;
 
         public string DiskName => rootBlock.Name;
 

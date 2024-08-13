@@ -15,8 +15,8 @@ namespace Amiga.FileFormats.ADF
         internal RootBlock RootBlock { get; }
         public abstract string Name { get; }
         public abstract string Path { get; }
-        public abstract DateTime CreationDate { get; }
-        public abstract DateTime LastModificationDate { get; }
+        public abstract DateTime? CreationDate { get; }
+        public abstract DateTime? LastModificationDate { get; }
         public abstract string Comment { get; }
         internal abstract uint Sector { get; }
 

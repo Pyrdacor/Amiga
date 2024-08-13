@@ -1,7 +1,4 @@
-﻿using System.IO;
-using System.Text;
-
-namespace Amiga.FileFormats.LHA
+﻿namespace Amiga.FileFormats.LHA
 {
     public enum LHAWriteResult
     {
@@ -49,6 +46,9 @@ namespace Amiga.FileFormats.LHA
 
             using var stream = File.Create(lhaFilePath);
             lha.Write(stream, hasEmptyDirectories);
-        }
+
+            return LHAWriteResult.Success;
+
+		}
     }
 }
