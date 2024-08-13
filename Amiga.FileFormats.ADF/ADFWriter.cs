@@ -119,7 +119,7 @@ namespace Amiga.FileFormats.ADF
 
             foreach (var dir in emptyDirectoryPaths)
             {
-                if (dir.Contains(':') || file.Contains('\\'))
+                if (dir.Contains(':') || dir.Contains('\\'))
                     throw new ArgumentException($"Directory names must not contain ':' or '\\'. Directory name was: '{dir}'.");
             }
 
@@ -142,10 +142,15 @@ namespace Amiga.FileFormats.ADF
             if (result >= ADFWriteResult.FirstError)
                 return result;
 
-            // TODO: write
-            // TODO: if no write error occurs, return result, otherwise the write error
-
-            return result;
+            try
+            {
+                stream.Write(data);
+                return result;
+            }
+            catch
+            {
+                return ADFWriteResult.WriteAccessError;
+            }
         }
     }
 }

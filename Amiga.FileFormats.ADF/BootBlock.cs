@@ -58,11 +58,8 @@
             sectorWriter(0, 2, writer =>
             {
                 int flags = (int)configuration.FileSystem;
-                if (configuration.LongFileNames)
-                    flags += 6;
-                else if (configuration.DirectoryCache)
-                    flags += 4;
-                else if (configuration.InternationalMode)
+
+                if (configuration.InternationalMode)
                     flags += 2;
 
                 writer.WriteChars(new char[3] { 'D', 'O', 'S' });
