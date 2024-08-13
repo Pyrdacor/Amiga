@@ -34,6 +34,20 @@
             return value;
         }
 
+        public static DateTime ReadUnixDateTime(byte[] data, int offset)
+        {
+	        long epochTicks = new DateTime(1970, 1, 1).Ticks;
+			long elapsedTicks = ReadLELong(data, offset) * TimeSpan.TicksPerSecond;
+            return new DateTime(epochTicks + elapsedTicks, DateTimeKind.Utc);
+        }
+
+        public static uint GetUnixDateTime(DateTime dateTime)
+        {
+			long epochTicks = new DateTime(1970, 1, 1).Ticks;
+			long elapsedTicks = dateTime.Ticks - epochTicks;
+			return (uint)(elapsedTicks / TimeSpan.TicksPerSecond);
+		}
+
         public static DateTime ReadGenericTimestamp(byte[] data, int offset)
         {
             /* Generic timestamp format

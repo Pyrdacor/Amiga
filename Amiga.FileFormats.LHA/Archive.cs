@@ -424,7 +424,7 @@ namespace Amiga.FileFormats.LHA
                 bool omit = false;
                 uint compressedSize = Util.ReadLELong(header, 7);
                 uint rawSize = Util.ReadLELong(header, 11);
-                Timestamp = Util.ReadGenericTimestamp(header, 15);
+                Timestamp = level < 2 ? Util.ReadGenericTimestamp(header, 15) : Util.ReadUnixDateTime(header, 15);
                 string comment = "";
                 ushort? dataCrc;
                 int osSpecifier;
@@ -436,7 +436,7 @@ namespace Amiga.FileFormats.LHA
                         ParseLevel0Header(position, header, reader, out path, out dataCrc, out osSpecifier);
                         break;
                     case 1:
-                        ParseLevel1Header(header, reader, out path, out dataCrc, out osSpecifier, out omit, out comment, out extensionSize);
+                        ParseLevel1Header(position, header, reader, out path, out dataCrc, out osSpecifier, out omit, out comment, out extensionSize);
                         break;
                     case 2:
                         ParseLevel2Header(header, reader, out path, out dataCrc, out osSpecifier, out omit, out comment, out extensionSize);
@@ -480,19 +480,15 @@ namespace Amiga.FileFormats.LHA
                 // In those cases the headerSize will be greater. Even the data CRC is optional.
                 // Also note that the header size does not include the first two bytes!
                 byte headerChecksum = 0;
-                int headerSize = header[0];
+                int headerSize = header[0] + 2;
                 int checksum = header[1];
                 int attribute = header[19]; // TODO: use later?
                 int pathLength = reader.ReadByte();
-                AddToHeaderCheckSum(headerChecksum, header);
+                AddToHeaderCheckSum(headerChecksum, header[2..]);
                 AddToHeaderCheckSum(headerChecksum, (byte)pathLength);
                 var nameBytes = reader.ReadBytes(pathLength);
                 AddToHeaderCheckSum(headerChecksum, nameBytes);
                 path = Encoding.ASCII.GetString(nameBytes);
-                int sizeDiff = (int)(reader.BaseStream.Position - position) - pathLength;
-
-                if (sizeDiff != 20 && sizeDiff != 22 && sizeDiff < 23)
-                    throw new InvalidDataException("Level 0 header size is invalid.");
 
                 ushort ReadAndCrcWord()
                 {
@@ -508,12 +504,14 @@ namespace Amiga.FileFormats.LHA
                     return b;
                 }
 
-                dataCrc = sizeDiff >= 22 ? ReadAndCrcWord() : null;
-                osSpecifier = sizeDiff >= 23 ? ReadAndCrcByte() : 0;
+                int remainingSize = headerSize - (int)(reader.BaseStream.Position - position);
 
-                if (sizeDiff > 23)
+                dataCrc = remainingSize >= 2 ? ReadAndCrcWord() : null;
+                osSpecifier = remainingSize >= 3 ? ReadAndCrcByte() : 0;
+
+                if (remainingSize > 3)
                 {
-                    var remainingHeaderBytes = reader.ReadBytes(sizeDiff - 24);
+                    var remainingHeaderBytes = reader.ReadBytes(remainingSize - 3);
                     AddToHeaderCheckSum(headerChecksum, remainingHeaderBytes);
                 }
 
@@ -521,16 +519,19 @@ namespace Amiga.FileFormats.LHA
                     throw new InvalidDataException("File header checksum is wrong.");
             }
 
-            private void ParseLevel1Header(byte[] header, BinaryReader reader, out string path, out ushort? dataCrc,
+            private void ParseLevel1Header(long position, byte[] header, BinaryReader reader, out string path, out ushort? dataCrc,
                 out int osSpecifier, out bool omit, out string comment, out int extensionSize)
             {
+	            omit = false;
+	            comment = "";
+
                 // Note that the header size does not include the first two bytes!
                 byte headerChecksum = 0;
-                int headerSize = header[0];
+                int headerSize = header[0] + 2;
                 int checksum = header[1];
-                int attribute = header[19]; // TODO: use later?
+                int attribute = header[19]; // must be 0x20
                 int pathLength = reader.ReadByte();
-                AddToHeaderCheckSum(headerChecksum, header);
+                AddToHeaderCheckSum(headerChecksum, header[2..]);
                 AddToHeaderCheckSum(headerChecksum, (byte)pathLength);
                 var nameBytes = reader.ReadBytes(pathLength);
                 AddToHeaderCheckSum(headerChecksum, nameBytes);
@@ -550,13 +551,14 @@ namespace Amiga.FileFormats.LHA
                     return b;
                 }
 
-                dataCrc = sizeDiff >= 22 ? ReadAndCrcWord() : null;
-                osSpecifier = sizeDiff >= 23 ? ReadAndCrcByte() : 0;
-                extensionSize = 0;
+                dataCrc = ReadAndCrcWord();
+                osSpecifier = ReadAndCrcByte();
+                int remainingSize = headerSize - (int)(reader.BaseStream.Position - position);
+				extensionSize = 0;
                 string directory = "";
                 string filename = "";
 
-                if (sizeDiff > 23)
+                if (remainingSize >= 2)
                 {
                     int nextExtensionSize = ReadAndCrcWord();
 
@@ -564,8 +566,22 @@ namespace Amiga.FileFormats.LHA
                     {
                         extensionSize += nextExtensionSize;
                         nextExtensionSize = ReadExtension(reader, nextExtensionSize, out int type, out var value, out var crc);
+
+                        if (type == 0)
+                            dataCrc = crc;
+                        else if (type == 1)
+							filename = value!;
+						else if (type == 2)
+							directory = value!;
+						else if (type == 3)
+							comment = value!;
                     }
                 }
+
+                if (!string.IsNullOrWhiteSpace(filename))
+	                path = filename;
+                if (!string.IsNullOrWhiteSpace(directory))
+	                path = directory + "/" + path;
 
                 if (headerChecksum != checksum)
                     throw new InvalidDataException("File header checksum is wrong.");

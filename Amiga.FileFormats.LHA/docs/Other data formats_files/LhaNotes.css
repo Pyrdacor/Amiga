@@ -1,0 +1,258 @@
+
+
+td.Level0HeaderSize {
+	background-color : rgb( 80%, 95%, 85% );
+}
+
+td.Level1BaseHeaderSize {
+	background-color : rgb( 85%, 95%, 85% );
+}
+
+td.HeaderSize {
+	background-color : rgb( 75%, 95%, 75% );
+}
+
+td.WordSize {
+	background-color : rgb( 95%, 75%, 95% );
+}
+
+td.Level0HeaderChecksum {
+	background-color : rgb( 95%, 85%, 75% );
+}
+
+td.Level1BaseHeaderChecksum {
+	background-color : rgb( 95%, 85%, 80% );
+}
+
+td.CompressMethod {
+	background-color : rgb( 65%, 85%, 95% );
+}
+
+td.CompressedSize {
+	background-color : rgb( 65%, 95%, 70% );
+}
+
+td.SkipSize {
+	background-color : rgb( 70%, 95%, 70% );
+}
+
+td.OriginalSize {
+	background-color : rgb( 55%, 95%, 75% );
+}
+
+td.CompressedResSize {
+	background-color : rgb( 65%, 95%, 90% );
+}
+
+td.ResSize {
+	background-color : rgb( 60%, 90%, 95% );
+}
+
+td.CapsuleSize {
+	background-color : rgb( 60%, 95%, 80% );
+}
+
+td.FileSize {
+	background-color : rgb( 45%, 95%, 75% );
+}
+
+td.BeginOffset {
+	background-color : rgb( 60%, 95%, 75% );
+}
+
+td.SizeOfRun {
+	background-color : rgb( 70%, 95%, 50% );
+}
+
+td.OSNameSize {
+	background-color : rgb( 80%, 95%, 50% );
+}
+
+td.OSName {
+	background-color : rgb( 60%, 95%, 60% );
+}
+
+td.DosTime {
+	background-color : rgb( 95%, 90%, 65% );
+}
+
+td.DosDate {
+	background-color : rgb( 95%, 85%, 55% );
+}
+
+td.time_tF {
+	background-color : rgb( 95%, 80%, 60% );
+}
+
+td.LastAccessTime {
+	background-color : rgb( 95%, 80%, 65% );
+}
+
+td.LastUpdateTime {
+	background-color : rgb( 95%, 80%, 70% );
+}
+
+td.CreateTime {
+	background-color : rgb( 95%, 85%, 60% );
+}
+
+td.DosAttribute {
+	background-color : rgb( 95%, 65%, 50% );
+}
+
+td.MacAttr {
+	background-color : rgb( 95%, 55%, 50% );
+}
+
+td.ExtAttr {
+	background-color : rgb( 95%, 75%, 85% );
+}
+
+td.ExtAttrID {
+	background-color : rgb( 95%, 90%, 90% );
+}
+
+td.SubID {
+	background-color : rgb( 95%, 90%, 85% );
+}
+
+td.Permission {
+	background-color : rgb( 95%, 80%, 50% );
+}
+
+td.GroupID {
+	background-color : rgb( 50%, 70%, 95% );
+}
+
+td.GroupName {
+	background-color : rgb( 30%, 70%, 95% );
+}
+
+td.UserID {
+	background-color : rgb( 50%, 75%, 95% );
+}
+
+td.UserName {
+	background-color : rgb( 30%, 75%, 95% );
+}
+
+td.OwnerID {
+	background-color : rgb( 55%, 75%, 95% );
+}
+
+td.SpanMode {
+	background-color : rgb( 95%, 70%, 50% );
+}
+
+td.ResurvedDA {
+	background-color : rgb( 95%, 60%, 60% );
+}
+
+td.HeaderLevel {
+	background-color : rgb( 95%, 65%, 65% );
+}
+
+td.FullPathSize {
+	background-color : rgb( 75%, 95%, 65% );
+}
+
+td.FileNameSize {
+	background-color : rgb( 75%, 95%, 60% );
+}
+
+td.FullPath {
+	background-color : rgb( 65%, 85%, 95% );
+}
+
+td.FileName {
+	background-color : rgb( 65%, 90%, 95% );
+}
+
+td.PathName {
+	background-color : rgb( 70%, 90%, 95% );
+}
+
+td.Comment {
+	background-color : rgb( 90%, 80%, 95% );
+}
+
+td.CompressedComment {
+	background-color : rgb( 90%, 85%, 95% );
+}
+
+td.FileCRC {
+	background-color : rgb( 95%, 75%, 65% );
+}
+
+td.ResCRC {
+	background-color : rgb( 95%, 70%, 65% );
+}
+
+td.OSID {
+	background-color : rgb( 75%, 75%, 95% );
+}
+
+td.ExtendType {
+	background-color : rgb( 70%, 75%, 95% );
+}
+
+td.FileCreater {
+	background-color : rgb( 95%, 75%, 80% );
+}
+
+td.FileType {
+	background-color : rgb( 95%, 70%, 75% );
+}
+
+td.MinorVersion {
+	background-color : rgb( 75%, 80%, 95% );
+}
+
+td.ExtendArea {
+	background-color : rgb( 85%, 65%, 95% );
+}
+
+td.NextExtendHeaderSize {
+	background-color : rgb( 70%, 95%, 65% );
+}
+
+td.ExtHeaderID {
+	background-color : rgb( 80%, 70%, 95% );
+}
+
+td.HeaderCRC {
+	background-color : rgb( 95%, 80%, 75% );
+}
+
+td.ExtraData {
+	background-color : rgb( 80%, 80%, 95% );
+}
+
+td.RedundantByte {
+	background-color : rgb( 95%, 50%, 75% );
+}
+
+td.Empty {
+	background-color : rgb( 87%, 87%, 87% );
+}
+
+
+/*
+     FILE ARCHIVED ON 20:44:48 Jan 02, 2007 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 14:25:54 Feb 13, 2024.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+*/
+/*
+playback timings (ms):
+  exclusion.robots: 0.1
+  exclusion.robots.policy: 0.089
+  cdx.remote: 0.121
+  esindex: 0.01
+  LoadShardBlock: 678.029 (6)
+  PetaboxLoader3.datanode: 1231.179 (7)
+  load_resource: 1028.409
+  PetaboxLoader3.resolve: 91.302
+*/
