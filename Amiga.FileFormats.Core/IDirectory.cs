@@ -1,4 +1,4 @@
-﻿namespace Amiga.FileFormats.ADF
+﻿namespace Amiga.FileFormats.Core
 {
     public interface IDirectory : IDirectoryEntry
     {        

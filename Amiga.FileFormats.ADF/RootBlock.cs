@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using Amiga.FileFormats.Core;
+using System.Data;
 
 namespace Amiga.FileFormats.ADF
 {
