@@ -10,6 +10,13 @@
     <RepositoryType>GitHub</RepositoryType>
     <PackageTags>Amiga ADF</PackageTags>
     <Company>Robert Schneckenhaus</Company>
+	<Authors>Robert Schneckenhaus</Authors>
+	<Version>0.1.0</Version>
+	<PackageProjectUrl>https://github.com/Pyrdacor/Amiga</PackageProjectUrl>
+	<RepositoryUrl>https://github.com/Pyrdacor/Amiga</RepositoryUrl>
+	<RepositoryType>Github</RepositoryType>
+	<PackageTags>Amiga ADF Disk Floppy OFS</PackageTags>
+	<PackageReleaseNotes>Use with caution. This is still in beta phase and not all features/operations are supported.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

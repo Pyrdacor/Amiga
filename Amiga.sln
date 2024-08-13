@@ -16,9 +16,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AmigaAdf", "AmigaAdf\AmigaAdf.csproj", "{7CA1F378-42A6-4925-9840-4F83732183D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amiga.FileFormats.LHA", "Amiga.FileFormats.LHA\Amiga.FileFormats.LHA.csproj", "{319B042D-ECCB-492E-935B-3A7368FF0D56}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amiga.FileFormats.LHA", "Amiga.FileFormats.LHA\Amiga.FileFormats.LHA.csproj", "{319B042D-ECCB-492E-935B-3A7368FF0D56}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amiga.FileFormats.Core", "Amiga.FileFormats.Core\Amiga.FileFormats.Core.csproj", "{B65F86DE-662C-4F2C-8AC3-A6DE0B4B96FE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amiga.FileFormats.Core", "Amiga.FileFormats.Core\Amiga.FileFormats.Core.csproj", "{B65F86DE-662C-4F2C-8AC3-A6DE0B4B96FE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AmigaConsole", "AmigaConsole\AmigaConsole.csproj", "{D9F4157A-0F98-4ECF-A7A8-15BD69CE354D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -46,6 +48,10 @@ Global
 		{B65F86DE-662C-4F2C-8AC3-A6DE0B4B96FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B65F86DE-662C-4F2C-8AC3-A6DE0B4B96FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B65F86DE-662C-4F2C-8AC3-A6DE0B4B96FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9F4157A-0F98-4ECF-A7A8-15BD69CE354D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9F4157A-0F98-4ECF-A7A8-15BD69CE354D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9F4157A-0F98-4ECF-A7A8-15BD69CE354D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9F4157A-0F98-4ECF-A7A8-15BD69CE354D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
