@@ -24,7 +24,7 @@ namespace Amiga.FileFormats.ADF
         public DateTime DiskLastModificationDate { get; }
         public override DateTime CreationDate { get; }
         public override IDirectory? Parent => null;
-        public override string Name => "<root>";
+        public override string Name { get; } = "<root>";
         public override string Path => "/";
         public override string Comment => "";
         internal override uint Sector { get; }
@@ -65,7 +65,7 @@ namespace Amiga.FileFormats.ADF
 
             int volumeNameLength = Math.Min(30, (int)reader.ReadByte());
             int position = reader.Position;
-            string name = new string(reader.ReadChars(volumeNameLength)).TrimEnd('\0');
+            Name = new string(reader.ReadChars(volumeNameLength)).TrimEnd('\0');
             reader.Position = position + 30;
 
             if (reader.ReadByte() != 0 ||

@@ -51,8 +51,24 @@
         internal delegate void WriteSectors(int index, int count, Action<DataWriter> writeHandler);
 
         public static ADFWriteResult WriteADFFile(string adfFilePath, string name, string directoryPath,
-            bool includeEmptyDirectories, string? fileFilter, FileSystem fileSystem,
-            bool bootable, bool internationalMode, bool hd)
+	        bool includeEmptyDirectories, string? fileFilter, FileSystem fileSystem,
+	        bool bootable, bool internationalMode, bool hd)
+        {
+	        var configuration = new ADFWriterConfiguration
+	        {
+		        FileSystem = fileSystem,
+		        InternationalMode = internationalMode,
+		        HD = hd,
+		        DiskFullBehavior = DiskFullBehavior.Error,
+		        BootCode = bootable ? DefaultBootCode : null
+	        };
+
+            return WriteADFFile(adfFilePath, name, directoryPath, includeEmptyDirectories, fileFilter, configuration);
+		}
+
+
+		public static ADFWriteResult WriteADFFile(string adfFilePath, string name, string directoryPath,
+            bool includeEmptyDirectories, string? fileFilter, ADFWriterConfiguration configuration)
         {
             var files = Directory.GetFiles(directoryPath, fileFilter ?? "*", SearchOption.AllDirectories);
             var directories = includeEmptyDirectories
@@ -60,15 +76,6 @@
                     .Where(d => !files.Any(f => f.Contains(d, StringComparison.InvariantCultureIgnoreCase)))
                     .ToArray()
                 : null;
-
-            var config = new ADFWriterConfiguration
-            {
-                FileSystem = fileSystem,
-                InternationalMode = internationalMode,
-                HD = hd,
-                DiskFullBehavior = DiskFullBehavior.Error,
-                BootCode = bootable ? DefaultBootCode : null
-            };
 
             Directory.CreateDirectory(Path.GetDirectoryName(adfFilePath));
             using var stream = File.Create(adfFilePath);
@@ -82,7 +89,7 @@
                 return path[rootLength..].Replace('\\', '/').TrimEnd('/');
             }
 
-            return WriteADFFile(stream, name, config,
+            return WriteADFFile(stream, name, configuration,
                 files.ToDictionary(f => GetRelativePath(f), f => File.ReadAllBytes(f)),
                 directories?.Select(d => GetRelativePath(d))?.ToList());
         }

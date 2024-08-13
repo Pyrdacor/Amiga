@@ -23,6 +23,8 @@ namespace Amiga.FileFormats.ADF
 
         public DateTime CreationDate => rootBlock.CreationDate;
 
+        public string DiskName => rootBlock.Name;
+
         public int DiskSize { get; }
 
         public const int SizeDD = 512 * 11 * 2 * 80;
