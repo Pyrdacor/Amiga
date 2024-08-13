@@ -58,7 +58,7 @@
             return ((hash << 5) ^ text[position + 2]) & HashMask;
         }
 
-        public CRC Compress(BinaryWriter writer, CompressionMethod method, byte[] rawData)
+        public CRC Compress(BinaryWriter writer, CompressionMethod method, byte[] rawData, out bool unpackable)
         {
             int ThrowUnsupported() => throw new NotSupportedException($"The compression method {Enum.GetName(method)} is not supported.");
 
@@ -71,6 +71,7 @@
             {
                 crc.Add(rawData);
                 writer.Write(rawData);
+                unpackable = true;
                 return crc;
             }
 
@@ -103,7 +104,7 @@
             int position = dictSize;
             int[] previousHashPosition = new int[dictSize];
             var hash = new Hash[HashSize];
-            bool unpackable = false;
+            unpackable = false;
             ushort outputMask = 0;
             ushort outputPosition = 0;
             var buffer = new byte[BufferSize];
@@ -163,6 +164,7 @@
             }
 
             EncodeEnd();
+
             return crc;
 
             int ReadBytesAndUpdateCrc(int offset, int size)

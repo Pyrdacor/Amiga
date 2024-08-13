@@ -1,5 +1,5 @@
 ﻿using Amiga.FileFormats.Core;
-using System.Reflection.PortableExecutable;
+using System.IO;
 using System.Text;
 using TimestampAndComment = System.Tuple<System.DateTime, string>;
 
@@ -7,9 +7,6 @@ namespace Amiga.FileFormats.LHA
 {
     internal class Archive : ILHA
     {
-        private readonly Dictionary<string, ArchiveEntry> files = new();
-        private readonly Dictionary<string, TimestampAndComment> emptyDirectories = new();
-
         public IDirectory RootDirectory { get; }
 
         private Archive()
@@ -76,7 +73,6 @@ namespace Amiga.FileFormats.LHA
 
         public IFile AddFile(string path, byte[] data, DateTime? creationDate = null, DateTime? lastChangeData = null, string? comment = null)
         {
-            files.Add(path, )
             return AddFile((RootDirectory as ArchiveDirectory)!, EnsureCorrectPathSeparator(path), data, creationDate, lastChangeData, comment);
         }
 
@@ -95,10 +91,13 @@ namespace Amiga.FileFormats.LHA
 
         private static string EnsureCorrectPathSeparator(string path) => path.Replace('\\', '/');
 
-        public void Write(Stream stream)
+        public void Write(Stream stream, bool hasEmptyDirectories)
         {
             using var writer = new BinaryWriter(stream, Encoding.ASCII, true);
-            RootDirectory.Write(writer);
+            (RootDirectory as ArchiveDirectory)!.Write(writer, hasEmptyDirectories);
+            writer.Write((byte)0);
+            if (writer.BaseStream.Length % 2 == 1)
+                writer.Write((byte)0);
         }
 
         private class ArchiveDirectory : IDirectory
@@ -251,6 +250,14 @@ namespace Amiga.FileFormats.LHA
 
             public IEnumerable<IFile> GetFiles() => files.Value.Values;
 
+            public bool ContainsAnyFiles()
+            {
+                if (files.Value.Count > 0)
+                    return true;
+
+                return directories.Value.Any(directory => directory.Value.ContainsAnyFiles());
+            }
+
             public ArchiveFile AddFile(string name, byte[] data, DateTime? creationDate, DateTime? lastChangeDate, string? comment)
             {
                 creationDate ??= DateTime.Now;
@@ -273,83 +280,116 @@ namespace Amiga.FileFormats.LHA
                 return directory;
             }
 
-            public void Write(BinaryWriter writer)
+            private void WriteFile(BinaryWriter writer, ArchiveFile file)
             {
-                foreach (var dir)
+                CompressionMethod method = CompressionMethod.LH5; // we use this as default for Amiga
+                Compressor compressor = new();
+                var compressedData = file.Data;
+                using var compressedStream = new MemoryStream();
+                using var compressedWriter = new BinaryWriter(compressedStream);
+                var crc = compressor.Compress(compressedWriter, method, file.Data, out bool unpackable);
+
+                if (unpackable)
+                {
+                    if (method != CompressionMethod.None)
+                    {
+                        method = CompressionMethod.None;
+                        crc = new CRC(); // might be incomplete due to partial compression, so create a clean one
+                        crc.Add(file.Data);
+                    }
+                }
+                else
+                {
+                    compressedData = compressedStream.ToArray();
+                }
+
+                WriteHeader(writer, file.Parent?.Path ?? "", file.Name, method, (uint)compressedData.Length, (uint)file.Data.Length, file.LastModificationDate, false, crc);
+                writer.Write(compressedData);
+            }
+
+            public void Write(BinaryWriter writer, bool canHaveEmptyDirectories)
+            {
+                foreach (var file in files.Value)
+                {
+                    WriteFile(writer, file.Value);
+                }
+
+                foreach (var directory in directories.Value)
+                {
+                    if (canHaveEmptyDirectories && !directory.Value.ContainsAnyFiles()) // store empty directory
+                        WriteHeader(writer, directory.Value.Parent?.Path ?? "", directory.Value.Name, CompressionMethod.None, 0, 0, directory.Value.LastModificationDate, true, null);
+                    else // process sub directory entries
+                        directory.Value.Write(writer, canHaveEmptyDirectories);
+                }
             }
         }
 
-        private static void WriteHeaderLevel0(BinaryWriter writer, CompressionMethod method, uint packedSize, uint originalSize, DateTime lastChangeDate, bool directory)
+        // We will always write header with level 1
+        private static void WriteHeader(BinaryWriter headerWriter, string directoryName, string name, CompressionMethod method,
+            uint packedSize, uint originalSize, DateTime lastChangeDate, bool directory, CRC? crc)
         {
-            long position = writer.BaseStream.Position;
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
+            var nameBytes = Encoding.ASCII.GetBytes(name);
+            int nameLength = name.Length >  228 ? 0 : name.Length;
 
-            writer.Write((byte)0); // header size
-            writer.Write((byte)0); // checksum
-            writer.Write(Encoding.ASCII.GetBytes(Compressor.SupportedCompressions[method]));
-            writer.Write(packedSize);
+            writer.Write((byte)(25 + nameLength)); // header size
+            writer.Write((byte)0); // checksum dummy
+            writer.Write(Encoding.ASCII.GetBytes(directory ? "-lhd-" : Compressor.SupportedCompressions[method]));
+            writer.Write(0); // skipsize dummy
             writer.Write(directory ? 0 : originalSize);
             writer.Write(Util.GetGenericTimestamp(lastChangeDate));
-            writer.Write((byte)(directory ? 0x10 : 0x20)); // attribute
-            writer.Write((byte)0); // level
+            writer.Write((byte)0x20); // attribute
+            writer.Write((byte)1); // level
+            writer.Write((byte)nameLength);
+            if (nameLength > 0) // otherwise it is stored in an extended header
+                writer.Write(nameBytes);
+            writer.Write(directory ? 0 : crc!.Value);
+            writer.Write((byte)'A'); // OS = Amiga
 
-            //write_header_level0(char* data, LzHeader* hdr, char* pathname)
-            //{
-            //    int limit;
-            //    int name_length;
-            //    size_t header_size;
+            if (nameLength == 0)
+            {
+                // Write file name extended header
+                WriteExtendedHeader(0x01, Encoding.ASCII.GetBytes(name));
+            }
 
-            //    setup_put(data);
-            //    memset(data, 0, LZHEADER_STORAGE);
+            if (directoryName.Length > 0)
+            {
+                // Write parent directory extended header
+                if (!directoryName.EndsWith("/"))
+                    directoryName += "/";
+                WriteExtendedHeader(0x02, Encoding.ASCII.GetBytes(directoryName).Select(b => b == (byte)'/' ? (byte)0xff : b).ToArray());
+            }
 
-            //    put_byte(0x00);             /* header size */
-            //    put_byte(0x00);             /* check sum */
-            //    put_bytes(hdr->method, 5);
-            //    put_longword(hdr->packed_size);
-            //    put_longword(hdr->original_size);
-            //    put_longword(unix_to_generic_stamp(hdr->unix_last_modified_stamp));
-            //    put_byte(hdr->attribute);
-            //    put_byte(hdr->header_level); /* level 0 */
+            // Write extended header end marker
+            writer.Write((ushort)0);
 
-            //    /* write pathname (level 0 header contains the directory part) */
-            //    name_length = strlen(pathname);
-            //    if (generic_format)
-            //        limit = 255 - I_GENERIC_HEADER_SIZE + 2;
-            //    else
-            //        limit = 255 - I_LEVEL0_HEADER_SIZE + 2;
+            void WriteExtendedHeader(byte type, params byte[] data)
+            {
+                writer.Write((ushort)(1 + data.Length));
+                writer.Write(type);
+                writer.Write(data);
+            }
 
-            //    if (name_length > limit)
-            //    {
-            //        warning("the length of pathname \"%s\" is too long.", pathname);
-            //        name_length = limit;
-            //    }
-            //    put_byte(name_length);
-            //    put_bytes(pathname, name_length);
-            //    put_word(hdr->crc);
+            long writtenSize = writer.BaseStream.Position;
+            uint skipSize = (uint)(writtenSize - (27 + nameLength)) + packedSize;
 
-            //    if (generic_format)
-            //    {
-            //        header_size = I_GENERIC_HEADER_SIZE + name_length - 2;
-            //        data[I_HEADER_SIZE] = header_size;
-            //        data[I_HEADER_CHECKSUM] = calc_sum(data + I_METHOD, header_size);
-            //    }
-            //    else
-            //    {
-            //        /* write old-style extend header */
-            //        put_byte(EXTEND_UNIX);
-            //        put_byte(CURRENT_UNIX_MINOR_VERSION);
-            //        put_longword(hdr->unix_last_modified_stamp);
-            //        put_word(hdr->unix_mode);
-            //        put_word(hdr->unix_uid);
-            //        put_word(hdr->unix_gid);
+            PatchValue(7, writer => writer.Write(skipSize));
 
-            //        /* size of extended header is 12 */
-            //        header_size = I_LEVEL0_HEADER_SIZE + name_length - 2;
-            //        data[I_HEADER_SIZE] = header_size;
-            //        data[I_HEADER_CHECKSUM] = calc_sum(data + I_METHOD, header_size);
-            //    }
+            var headerBytes = new byte[25 + nameLength];
+            stream.Position = 2;
+            stream.Read(headerBytes, 0, headerBytes.Length);
 
-            //    return header_size + 2;
-            //}
+            int headerChecksum = headerBytes.Sum(b => b) & 0xff;
+            PatchValue(1, writer => writer.Write((byte)headerChecksum));
+
+            void PatchValue(int relativeOffset, Action<BinaryWriter> patchAction)
+            {
+                writer.BaseStream.Position = relativeOffset;
+                patchAction(writer);
+            }
+
+            headerWriter.Write(stream.ToArray());
         }
 
         private class ArchiveEntry
