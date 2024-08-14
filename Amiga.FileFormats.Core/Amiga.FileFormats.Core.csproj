@@ -1,9 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+	  <TargetFramework>net8.0</TargetFramework>
+	  <ImplicitUsings>enable</ImplicitUsings>
+	  <Nullable>enable</Nullable>
+	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	  <PackageProjectUrl>https://github.com/Pyrdacor/Amiga</PackageProjectUrl>
+	  <RepositoryUrl>https://github.com/Pyrdacor/Amiga</RepositoryUrl>
+	  <RepositoryType>GitHub</RepositoryType>
+	  <Company>Robert Schneckenhaus</Company>
+	  <Authors>Robert Schneckenhaus</Authors>
+	  <Version>0.3.0</Version>
+	  <PackageTags>Amiga Virtual FileSystem</PackageTags>
+	  <PackageReleaseNotes>Use with caution. This is still in beta phase and not all features/operations are supported.</PackageReleaseNotes>
+	  <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
 
 </Project>
