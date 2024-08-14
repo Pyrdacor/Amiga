@@ -21,6 +21,7 @@ internal class Decompressor
 	private ushort bitBuf = 0;
 	private byte subBitBuf = 0;
 	private int compsize = 0;
+	private int loc = 0;
 
 	private const int LZHuff5DictBits = 13;
 	private const int LZHuff6DictBits = 15;
@@ -58,7 +59,6 @@ internal class Decompressor
 		private int flagCount = 0;
 		private ushort flag = 0;
 		private int matchPosition = 0;
-		private int loc = 0;
 		private readonly Decompressor parent;
 
 		public LZDecompressor(Decompressor parent)
@@ -89,7 +89,7 @@ internal class Decompressor
 
 		public ushort DecodeP()
 		{
-			return (ushort)((loc - matchPosition - Magic) & 0xfff);
+			return (ushort)((parent.loc - matchPosition - Magic) & 0xfff);
 		}
 
 		public void DecodeStart(byte[] dictionaryText)
@@ -459,7 +459,7 @@ internal class Decompressor
 		int dictSizeMask = dictSize - 1;
 		int adjust = 256 - Threshold;
 		int decodeCount = 0;
-		int loc = 0;
+		loc = 0;
 
 		while (decodeCount < rawSize)
 		{
