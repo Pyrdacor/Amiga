@@ -1,15 +1,24 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <Version>0.1</Version>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	<PackageProjectUrl>https://github.com/Pyrdacor/Amiga</PackageProjectUrl>
+	<RepositoryUrl>https://github.com/Pyrdacor/Amiga</RepositoryUrl>
+	<RepositoryType>GitHub</RepositoryType>	
+	<Company>Robert Schneckenhaus</Company>
+	<Authors>Robert Schneckenhaus</Authors>
+    <Version>0.2.0</Version>
+	<PackageTags>Amiga Atari LHA LArc</PackageTags>
+    <PackageReleaseNotes>Use with caution. This is still in beta phase and not all features/operations are supported.</PackageReleaseNotes>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
+	<None Include="README.md" Pack="true" PackagePath="\" />
     <ProjectReference Include="..\Amiga.FileFormats.Core\Amiga.FileFormats.Core.csproj" />
   </ItemGroup>
 

@@ -8,18 +8,16 @@
     <PackageProjectUrl>https://github.com/Pyrdacor/Amiga</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Pyrdacor/Amiga</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
-    <PackageTags>Amiga ADF</PackageTags>
     <Company>Robert Schneckenhaus</Company>
 	<Authors>Robert Schneckenhaus</Authors>
-	<Version>0.1.0</Version>
-	<PackageProjectUrl>https://github.com/Pyrdacor/Amiga</PackageProjectUrl>
-	<RepositoryUrl>https://github.com/Pyrdacor/Amiga</RepositoryUrl>
-	<RepositoryType>Github</RepositoryType>
+	<Version>0.2.0</Version>
 	<PackageTags>Amiga ADF Disk Floppy OFS</PackageTags>
 	<PackageReleaseNotes>Use with caution. This is still in beta phase and not all features/operations are supported.</PackageReleaseNotes>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
+	<None Include="README.md" />
     <ProjectReference Include="..\Amiga.FileFormats.Core\Amiga.FileFormats.Core.csproj" />
   </ItemGroup>
 

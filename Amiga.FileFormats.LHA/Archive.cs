@@ -1,4 +1,5 @@
 ﻿using Amiga.FileFormats.Core;
+using System.ComponentModel;
 using System.Text;
 using TimestampAndComment = System.Tuple<System.DateTime?, string>;
 
@@ -90,16 +91,55 @@ namespace Amiga.FileFormats.LHA
 
         private static string EnsureCorrectPathSeparator(string path) => path.Replace('\\', '/');
 
-        public void Write(Stream stream, bool hasEmptyDirectories)
+        public LHAWriteResult Write(Stream stream, bool hasEmptyDirectories, CompressionMethod compressionMethod, DriveInfo? driveInfo)
         {
-            using var writer = new BinaryWriter(stream, Encoding.ASCII, true);
-            (RootDirectory as ArchiveDirectory)!.Write(writer, hasEmptyDirectories);
-            writer.Write((byte)0);
-            if (writer.BaseStream.Length % 2 == 1)
+            using var writer = new CheckedWriter(stream, Encoding.ASCII, true, driveInfo);
+
+            try
+            {
+                (RootDirectory as ArchiveDirectory)!.Write(writer, hasEmptyDirectories, compressionMethod);
+
                 writer.Write((byte)0);
+                if (writer.BaseStream.Length % 2 == 1)
+                    writer.Write((byte)0);
+            }
+            catch (CheckedWriter.DiskFullException)
+            {
+                return LHAWriteResult.DiskFullError;
+            }
+            catch
+            {
+                return LHAWriteResult.WriteAccessError;
+            }
+
+            return LHAWriteResult.Success;
         }
 
-        private class ArchiveDirectory : IDirectory
+        private static IEnumerable<IDirectoryEntry> GetRecursive(IDirectory directory, Func<IDirectoryEntry, bool> filter)
+        {
+            foreach (var entry in directory.GetEntries())
+            {
+                if (filter(entry)) yield return entry;
+
+                if (entry is IDirectory subDirectory)
+                {
+                    foreach (var subEntry in GetRecursive(subDirectory, filter))
+                        yield return subEntry;
+                }
+            }
+        }
+
+		public IFile[] GetAllFiles()
+        {
+            return GetRecursive(RootDirectory, entry => entry is IFile).Cast<IFile>().ToArray();
+        }
+
+		public IDirectory[] GetAllEmptyDirectories()
+        {
+			return GetRecursive(RootDirectory, entry => entry is IDirectory dir && !dir.GetEntries().Any()).Cast<IDirectory>().ToArray();
+		}
+
+		private class ArchiveDirectory : IDirectory
         {
             private readonly Lazy<Dictionary<string, ArchiveDirectory>> directories;            
             private readonly Lazy<Dictionary<string, IDirectoryEntry>> entries;
@@ -279,9 +319,8 @@ namespace Amiga.FileFormats.LHA
                 return directory;
             }
 
-            private void WriteFile(BinaryWriter writer, ArchiveFile file)
+            private void WriteFile(CheckedWriter writer, ArchiveFile file, CompressionMethod method)
             {
-                CompressionMethod method = CompressionMethod.LH5; // we use this as default for Amiga
                 Compressor compressor = new();
                 var compressedData = file.Data;
                 using var compressedStream = new MemoryStream();
@@ -302,29 +341,36 @@ namespace Amiga.FileFormats.LHA
                     compressedData = compressedStream.ToArray();
                 }
 
-                WriteHeader(writer, file.Parent?.Path ?? "", file.Name, method, (uint)compressedData.Length, (uint)file.Data.Length, file.LastModificationDate ?? DateTime.UtcNow, false, crc);
-                writer.Write(compressedData);
+                WriteHeader(writer, file.Parent?.Path ?? "", file.Name, method, (uint)compressedData.Length,
+                    (uint)file.Data.Length, file.LastModificationDate ?? DateTime.UtcNow, false, crc);
+
+               writer.Write(compressedData);
             }
 
-            public void Write(BinaryWriter writer, bool canHaveEmptyDirectories)
+            public void Write(CheckedWriter writer, bool canHaveEmptyDirectories, CompressionMethod method)
             {
                 foreach (var file in files.Value)
                 {
-                    WriteFile(writer, file.Value);
-                }
+                    WriteFile(writer, file.Value, method);
+				}
 
                 foreach (var directory in directories.Value)
                 {
                     if (canHaveEmptyDirectories && !directory.Value.ContainsAnyFiles()) // store empty directory
-                        WriteHeader(writer, directory.Value.Parent?.Path ?? "", directory.Value.Name, CompressionMethod.None, 0, 0, directory.Value.LastModificationDate ?? DateTime.UtcNow, true, null);
+                    {
+                        WriteHeader(writer, directory.Value.Parent?.Path ?? "", directory.Value.Name, CompressionMethod.None, 0, 0,
+                            directory.Value.LastModificationDate ?? DateTime.UtcNow, true, null);
+                    }
                     else // process sub directory entries
-                        directory.Value.Write(writer, canHaveEmptyDirectories);
+                    {
+                        directory.Value.Write(writer, canHaveEmptyDirectories, method);
+                    }
                 }
             }
         }
 
         // We will always write header with level 1
-        private static void WriteHeader(BinaryWriter headerWriter, string directoryName, string name, CompressionMethod method,
+        private static void WriteHeader(CheckedWriter headerWriter, string directoryName, string name, CompressionMethod method,
             uint packedSize, uint originalSize, DateTime lastChangeDate, bool directory, CRC? crc)
         {
             using var stream = new MemoryStream();

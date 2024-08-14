@@ -50,7 +50,13 @@
 
         internal delegate void WriteSectors(int index, int count, Action<DataWriter> writeHandler);
 
-        public static ADFWriteResult WriteADFFile(string adfFilePath, string name, string directoryPath,
+		public static ADFWriteResult WriteADFFile(string adfFilePath, string name, string directoryPath,
+			string? fileFilter = null, bool includeEmptyDirectories = false)
+        {
+            return WriteADFFile(adfFilePath, name, directoryPath, includeEmptyDirectories, fileFilter, new ADFWriterConfiguration());
+        }
+
+		public static ADFWriteResult WriteADFFile(string adfFilePath, string name, string directoryPath,
 	        bool includeEmptyDirectories, string? fileFilter, FileSystem fileSystem,
 	        bool bootable, bool internationalMode, bool hd)
         {
@@ -65,7 +71,6 @@
 
             return WriteADFFile(adfFilePath, name, directoryPath, includeEmptyDirectories, fileFilter, configuration);
 		}
-
 
 		public static ADFWriteResult WriteADFFile(string adfFilePath, string name, string directoryPath,
             bool includeEmptyDirectories, string? fileFilter, ADFWriterConfiguration configuration)
@@ -94,7 +99,13 @@
                 directories?.Select(d => GetRelativePath(d))?.ToList());
         }
 
-        public static ADFWriteResult WriteADFFile(Stream stream, string name, ADFWriterConfiguration configuration,
+		public static ADFWriteResult WriteADFFile(Stream stream, string name,
+            Dictionary<string, Stream> files, List<string>? emptyDirectoryPaths = null)
+		{
+			return WriteADFFile(stream, name, new ADFWriterConfiguration(), files, emptyDirectoryPaths);
+		}
+
+		public static ADFWriteResult WriteADFFile(Stream stream, string name, ADFWriterConfiguration configuration,
             Dictionary<string, Stream> files, List<string>? emptyDirectoryPaths = null)
         {
             static byte[] DataFromStream(Stream stream)
@@ -109,7 +120,13 @@
                 emptyDirectoryPaths);
         }
 
-        public static ADFWriteResult WriteADFFile(Stream stream, string name, ADFWriterConfiguration configuration,
+		public static ADFWriteResult WriteADFFile(Stream stream, string name,
+			Dictionary<string, byte[]> files, List<string>? emptyDirectoryPaths = null)
+		{
+			return WriteADFFile(stream, name, new ADFWriterConfiguration(), files, emptyDirectoryPaths);
+		}
+
+		public static ADFWriteResult WriteADFFile(Stream stream, string name, ADFWriterConfiguration configuration,
             Dictionary<string, byte[]> files, List<string>? emptyDirectoryPaths = null)
         {
             if (name.Contains('/') || name.Contains(':'))
