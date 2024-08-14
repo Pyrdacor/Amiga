@@ -11,7 +11,7 @@
 	<RepositoryType>GitHub</RepositoryType>	
 	<Company>Robert Schneckenhaus</Company>
 	<Authors>Robert Schneckenhaus</Authors>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
 	<PackageTags>Amiga Atari LHA LArc</PackageTags>
     <PackageReleaseNotes>Use with caution. This is still in beta phase and not all features/operations are supported.</PackageReleaseNotes>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
