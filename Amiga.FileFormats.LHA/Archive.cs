@@ -65,7 +65,7 @@ internal class Archive : ILHA
     {
         if (!relativePath.Contains('/'))
             return parent.AddDirectory(relativePath, creationDate);
-        
+
         var parts = relativePath.Split('/');
         parent = parent.AddDirectory(parts[0], creationDate);
         return AddEmptyDirectory(parent, string.Join("/", parts.Skip(1)), creationDate);
@@ -129,19 +129,19 @@ internal class Archive : ILHA
         }
     }
 
-		public IFile[] GetAllFiles()
+    public IFile[] GetAllFiles()
     {
         return GetRecursive(RootDirectory, entry => entry is IFile).Cast<IFile>().ToArray();
     }
 
-		public IDirectory[] GetAllEmptyDirectories()
+    public IDirectory[] GetAllEmptyDirectories()
     {
-			return GetRecursive(RootDirectory, entry => entry is IDirectory dir && !dir.GetEntries().Any()).Cast<IDirectory>().ToArray();
-		}
+        return GetRecursive(RootDirectory, entry => entry is IDirectory dir && !dir.GetEntries().Any()).Cast<IDirectory>().ToArray();
+    }
 
-		private class ArchiveDirectory : IDirectory
+    private class ArchiveDirectory : IDirectory
     {
-        private readonly Lazy<Dictionary<string, ArchiveDirectory>> directories;            
+        private readonly Lazy<Dictionary<string, ArchiveDirectory>> directories;
         private readonly Lazy<Dictionary<string, IDirectoryEntry>> entries;
         private readonly Lazy<Dictionary<string, ArchiveFile>> files;
 
@@ -315,7 +315,7 @@ internal class Archive : ILHA
             creationDate ??= DateTime.Now;
             directory = new ArchiveDirectory(name, this, [], [], creationDate.Value, creationDate.Value);
             entries.Value.Add(name, directory);
-            directories.Value.Add(name, directory);                
+            directories.Value.Add(name, directory);
             return directory;
         }
 
@@ -344,7 +344,7 @@ internal class Archive : ILHA
             WriteHeader(writer, file.Parent?.Path ?? "", file.Name, method, (uint)compressedData.Length,
                 (uint)file.Data.Length, file.LastModificationDate ?? DateTime.UtcNow, false, crc);
 
-           writer.Write(compressedData);
+            writer.Write(compressedData);
         }
 
         public void Write(CheckedWriter writer, bool canHaveEmptyDirectories, CompressionMethod method)
@@ -352,7 +352,7 @@ internal class Archive : ILHA
             foreach (var file in files.Value)
             {
                 WriteFile(writer, file.Value, method);
-			}
+            }
 
             foreach (var directory in directories.Value)
             {
@@ -376,7 +376,7 @@ internal class Archive : ILHA
         using var stream = new MemoryStream();
         using var writer = new BinaryWriter(stream);
         var nameBytes = Encoding.ASCII.GetBytes(name);
-        int nameLength = name.Length >  228 ? 0 : name.Length;
+        int nameLength = name.Length > 228 ? 0 : name.Length;
 
         writer.Write((byte)(25 + nameLength)); // header size
         writer.Write((byte)0); // checksum dummy
@@ -460,7 +460,7 @@ internal class Archive : ILHA
             if ((reader.BaseStream.Length - position) < 21)
                 throw new InvalidDataException("Not a valid LHA entry.");
 
-            var header = new byte[20];
+            var header = new byte[21];
             header[0] = firstByte;
             reader.Read(header, 1, 19); // read the rest of the header
             int level = reader.ReadByte(); // read the level
@@ -477,6 +477,8 @@ internal class Archive : ILHA
             ushort? dataCrc;
             int osSpecifier;
             int extensionSize = 0;
+
+            header[20] = (byte)level;
 
             switch (level)
             {
@@ -513,7 +515,7 @@ internal class Archive : ILHA
 
         private static byte AddToHeaderCheckSum(byte checksum, params byte[] bytes)
         {
-            for (int i = 0; i <  bytes.Length; ++i)
+            for (int i = 0; i < bytes.Length; ++i)
             {
                 checksum = unchecked((byte)(checksum + bytes[i]));
             }
@@ -532,23 +534,23 @@ internal class Archive : ILHA
             int checksum = header[1];
             int attribute = header[19]; // TODO: use later?
             int pathLength = reader.ReadByte();
-				headerChecksum = AddToHeaderCheckSum(headerChecksum, header[2..]);
-				headerChecksum = AddToHeaderCheckSum(headerChecksum, (byte)pathLength);
+            headerChecksum = AddToHeaderCheckSum(headerChecksum, header[2..]);
+            headerChecksum = AddToHeaderCheckSum(headerChecksum, (byte)pathLength);
             var nameBytes = reader.ReadBytes(pathLength);
-				headerChecksum = AddToHeaderCheckSum(headerChecksum, nameBytes);
+            headerChecksum = AddToHeaderCheckSum(headerChecksum, nameBytes);
             path = Encoding.ASCII.GetString(nameBytes);
 
             ushort ReadAndCrcWord()
             {
                 var bytes = reader.ReadBytes(2);
-					headerChecksum = AddToHeaderCheckSum(headerChecksum, bytes);
+                headerChecksum = AddToHeaderCheckSum(headerChecksum, bytes);
                 return Util.ReadLEWord(bytes, 0);
             }
 
             byte ReadAndCrcByte()
             {
                 byte b = reader.ReadByte();
-					headerChecksum = AddToHeaderCheckSum(headerChecksum, b);
+                headerChecksum = AddToHeaderCheckSum(headerChecksum, b);
                 return b;
             }
 
@@ -560,7 +562,7 @@ internal class Archive : ILHA
             if (remainingSize > 3)
             {
                 var remainingHeaderBytes = reader.ReadBytes(remainingSize - 3);
-					headerChecksum = AddToHeaderCheckSum(headerChecksum, remainingHeaderBytes);
+                headerChecksum = AddToHeaderCheckSum(headerChecksum, remainingHeaderBytes);
             }
 
             if (headerChecksum != checksum)
@@ -570,8 +572,8 @@ internal class Archive : ILHA
         private void ParseLevel1Header(long position, byte[] header, BinaryReader reader, out string path, out ushort? dataCrc,
             out int osSpecifier, out bool omit, out string comment, out int extensionSize)
         {
-	            omit = false;
-	            comment = "";
+            omit = false;
+            comment = "";
 
             // Note that the header size does not include the first two bytes!
             byte headerChecksum = 0;
@@ -579,30 +581,30 @@ internal class Archive : ILHA
             int checksum = header[1];
             int attribute = header[19]; // must be 0x20
             int pathLength = reader.ReadByte();
-            AddToHeaderCheckSum(headerChecksum, header[2..]);
-            AddToHeaderCheckSum(headerChecksum, (byte)pathLength);
+            headerChecksum = AddToHeaderCheckSum(headerChecksum, header[2..]);
+            headerChecksum = AddToHeaderCheckSum(headerChecksum, (byte)pathLength);
             var nameBytes = reader.ReadBytes(pathLength);
-            AddToHeaderCheckSum(headerChecksum, nameBytes);
+            headerChecksum = AddToHeaderCheckSum(headerChecksum, nameBytes);
             path = Encoding.ASCII.GetString(nameBytes);
 
             ushort ReadAndCrcWord()
             {
                 var bytes = reader.ReadBytes(2);
-                AddToHeaderCheckSum(headerChecksum, bytes);
+                headerChecksum = AddToHeaderCheckSum(headerChecksum, bytes);
                 return Util.ReadLEWord(bytes, 0);
             }
 
             byte ReadAndCrcByte()
             {
                 byte b = reader.ReadByte();
-                AddToHeaderCheckSum(headerChecksum, b);
+                headerChecksum = AddToHeaderCheckSum(headerChecksum, b);
                 return b;
             }
 
             dataCrc = ReadAndCrcWord();
             osSpecifier = ReadAndCrcByte();
             int remainingSize = headerSize - (int)(reader.BaseStream.Position - position);
-				extensionSize = 0;
+            extensionSize = 0;
             string directory = "";
             string filename = "";
 
@@ -618,18 +620,18 @@ internal class Archive : ILHA
                     if (type == 0)
                         dataCrc = crc;
                     else if (type == 1)
-							filename = value!;
-						else if (type == 2)
-							directory = value!;
-						else if (type == 3)
-							comment = value!;
+                        filename = value!;
+                    else if (type == 2)
+                        directory = value!;
+                    else if (type == 3)
+                        comment = value!;
                 }
             }
 
             if (!string.IsNullOrWhiteSpace(filename))
-	                path = filename;
+                path = filename;
             if (!string.IsNullOrWhiteSpace(directory))
-	                path = directory + "/" + path;
+                path = directory + "/" + path;
 
             if (headerChecksum != checksum)
                 throw new InvalidDataException("File header checksum is wrong.");
