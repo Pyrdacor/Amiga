@@ -28,7 +28,7 @@ internal class Compressor
     private const int HashChainLimit = 0x100;
     private const int HashMask = HashSize - 1;
     private const int CharBits = 8;
-    private const int BufferSize = 16 * 1024 * 2; // 65408
+    private const int BufferSize = 65408; // In original code it is 16 * 1024 * 2 but a comments says 65408. But 16 * 1024 * 2 is 32768 only.
     private const int NP = MaxDictBits + 1;
     private const int NT = 19; // USHRT_BIT + 3
     private const int NC = byte.MaxValue + MaxMatch + 2 - Threshold;
@@ -123,51 +123,52 @@ internal class Compressor
         byte subBitBuffer = 0;
         int compressedSize = 0;
         bool cannotPack = false;
+        ushort cpos = 0;
 
         try
         {
-	            for (int i = 0; i < HashSize; ++i)
-	            {
-		            hash[i] = new Hash();
-	            }
+            for (int i = 0; i < HashSize; ++i)
+            {
+                hash[i] = new Hash();
+            }
 
-	            int token = InitHash(text, position);
-	            InsertHash(token, position);
+            int token = InitHash(text, position);
+            InsertHash(token, position);
 
-	            while (remainder > 0 && !cannotPack)
-	            {
-		            last = match;
+            while (remainder > 0 && !cannotPack)
+            {
+                last = match;
 
-		            NextToken(ref token, ref position);
-		            SearchDict(token, position, last.Length - 1, ref match);
-		            InsertHash(token, position);
+                NextToken(ref token, ref position);
+                SearchDict(token, position, last.Length - 1, ref match);
+                InsertHash(token, position);
 
-		            if (match.Length > last.Length || last.Length < Threshold)
-		            {
-			            // output a letter
-			            Output(text[position - 1], 0);
-			            count++;
-		            }
-		            else
-		            {
-			            // output length and offset
-			            Output((ushort)(last.Length + (256 - Threshold)), (ushort)((last.Offset - 1) & (dictSize - 1)));
-			            count += last.Length;
-			            --last.Length;
+                if (match.Length > last.Length || last.Length < Threshold)
+                {
+                    // output a letter
+                    Output(text[position - 1], 0, ref cpos);
+                    count++;
+                }
+                else
+                {
+                    // output length and offset
+                    Output((ushort)(last.Length + (256 - Threshold)), (ushort)((last.Offset - 1) & (dictSize - 1)), ref cpos);
+                    count += last.Length;
+                    --last.Length;
 
-			            while (--last.Length > 0)
-			            {
-				            NextToken(ref token, ref position);
-				            InsertHash(token, position);
-			            }
+                    while (--last.Length > 0)
+                    {
+                        NextToken(ref token, ref position);
+                        InsertHash(token, position);
+                    }
 
-			            NextToken(ref token, ref position);
-			            SearchDict(token, position, Threshold - 1, ref match);
-			            InsertHash(token, position);
-		            }
-	            }
+                    NextToken(ref token, ref position);
+                    SearchDict(token, position, Threshold - 1, ref match);
+                    InsertHash(token, position);
+                }
+            }
 
-	            EncodeEnd();
+            EncodeEnd();
         }
         finally
         {
@@ -315,9 +316,8 @@ internal class Compressor
             }
         }
 
-        void Output(ushort c, ushort p)
+        void Output(ushort c, ushort p, ref ushort cpos)
         {
-            int cpos = 0;
             outputMask >>= 1;
 
             if (outputMask == 0)
@@ -338,7 +338,7 @@ internal class Compressor
                 buffer[cpos] = 0;
             }
 
-            buffer[outputPosition++] = (byte)c;
+            buffer[outputPosition++] = (byte)(c & 0xff);
             c_freq[c]++;
 
             if (c >= (1 << CharBits))
@@ -362,6 +362,7 @@ internal class Compressor
         {
             ushort root = (ushort)MakeTree(NC, c_freq, c_len, c_code);
             ushort size = c_freq[root];
+
             PutBits(16, size);
 
             if (root >= NC)
@@ -466,7 +467,7 @@ internal class Compressor
 
             while (i < n)
             {
-                byte k = c_len[i];
+                byte k = c_len[i++];
 
                 if (k == 0)
                 {
@@ -514,7 +515,7 @@ internal class Compressor
 
             PutBits(nbit, (ushort)n);
             int i = 0;
-            
+
             while (i < n)
             {
                 ushort k = pt_len[i++];
@@ -596,7 +597,7 @@ internal class Compressor
                 }
                 else
                 {
-	                    cannotPack = true;
+                    cannotPack = true;
                 }
 
                 subBitBuffer = 0;
@@ -703,7 +704,7 @@ internal class Compressor
 
             for (int i = 16; i > 0; i--)
             {
-                c += (uint)(leafNum[i] << (16 - i));
+                c += (uint)leafNum[i] << (16 - i);
             }
 
             c &= 0xffff;

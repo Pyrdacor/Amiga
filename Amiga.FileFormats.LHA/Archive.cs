@@ -351,7 +351,7 @@ internal class Archive : ILHA
             foreach (var file in files.Value)
             {
                 WriteFile(writer, file.Value, method);
-				}
+			}
 
             foreach (var directory in directories.Value)
             {
