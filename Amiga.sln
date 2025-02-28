@@ -21,6 +21,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amiga.FileFormats.Core", "A
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AmigaConsole", "AmigaConsole\AmigaConsole.csproj", "{D9F4157A-0F98-4ECF-A7A8-15BD69CE354D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AmigaLha", "AmigaLha\AmigaLha.csproj", "{83B9F6EF-86AC-48EB-BF78-CBF9F15AF914}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,10 @@ Global
 		{D9F4157A-0F98-4ECF-A7A8-15BD69CE354D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9F4157A-0F98-4ECF-A7A8-15BD69CE354D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9F4157A-0F98-4ECF-A7A8-15BD69CE354D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{83B9F6EF-86AC-48EB-BF78-CBF9F15AF914}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83B9F6EF-86AC-48EB-BF78-CBF9F15AF914}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83B9F6EF-86AC-48EB-BF78-CBF9F15AF914}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83B9F6EF-86AC-48EB-BF78-CBF9F15AF914}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

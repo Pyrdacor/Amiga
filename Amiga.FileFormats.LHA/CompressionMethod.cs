@@ -1,11 +1,10 @@
-﻿namespace Amiga.FileFormats.LHA
+﻿namespace Amiga.FileFormats.LHA;
+
+public enum CompressionMethod
 {
-    public enum CompressionMethod
-    {
-        None,
-        LH5,
-        LH6,
-        LH7,
-        LZ5
-    }
+    None,
+    LH5,
+    LH6,
+    LH7,
+    LZ5
 }

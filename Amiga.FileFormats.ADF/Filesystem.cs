@@ -1,8 +1,7 @@
-﻿namespace Amiga.FileFormats.ADF
+﻿namespace Amiga.FileFormats.ADF;
+
+public enum FileSystem
 {
-    public enum FileSystem
-    {
-        OFS,
-        FFS
-    }
+    OFS,
+    FFS
 }

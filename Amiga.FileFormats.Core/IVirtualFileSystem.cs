@@ -1,7 +1,6 @@
-﻿namespace Amiga.FileFormats.Core
+﻿namespace Amiga.FileFormats.Core;
+
+public interface IVirtualFileSystem
 {
-    public interface IVirtualFileSystem
-    {
-        IDirectory RootDirectory { get; }
-    }
+    IDirectory RootDirectory { get; }
 }

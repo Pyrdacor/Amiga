@@ -1,10 +1,9 @@
 ﻿using Amiga.FileFormats.Core;
 
-namespace Amiga.FileFormats.LHA
+namespace Amiga.FileFormats.LHA;
+
+public interface ILHA : IVirtualFileSystem
 {
-    public interface ILHA : IVirtualFileSystem
-    {
-        IFile[] GetAllFiles();
-        IDirectory[] GetAllEmptyDirectories();
-    }
+    IFile[] GetAllFiles();
+    IDirectory[] GetAllEmptyDirectories();
 }

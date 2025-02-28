@@ -1,7 +1,6 @@
-﻿namespace Amiga.FileFormats.LHA
-{
-    public class StaticHuffman
-    {
+﻿namespace Amiga.FileFormats.LHA;
 
-    }
+public class StaticHuffman
+{
+
 }

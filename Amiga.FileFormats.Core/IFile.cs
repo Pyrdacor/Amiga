@@ -1,8 +1,7 @@
-﻿namespace Amiga.FileFormats.Core
+﻿namespace Amiga.FileFormats.Core;
+
+public interface IFile : IDirectoryEntry
 {
-    public interface IFile : IDirectoryEntry
-    {
-        int Size { get; }
-        byte[] Data { get; }
-    }
+    int Size { get; }
+    byte[] Data { get; }
 }
