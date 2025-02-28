@@ -1,4 +1,5 @@
 ﻿using Amiga.FileFormats.Core;
+using System.IO;
 using System.Text;
 using TimestampAndComment = System.Tuple<System.DateTime?, string>;
 
@@ -380,15 +381,15 @@ internal class Archive : ILHA
         writer.Write((byte)(25 + nameLength)); // header size
         writer.Write((byte)0); // checksum dummy
         writer.Write(Encoding.ASCII.GetBytes(directory ? "-lhd-" : Compressor.SupportedCompressions[method]));
-        writer.Write(0); // skipsize dummy
+        writer.Write(0); // skip size dummy
         writer.Write(directory ? 0 : originalSize);
         writer.Write(Util.GetGenericTimestamp(lastChangeDate));
-        writer.Write((byte)0x20); // attribute
+        writer.Write((byte)0x20); // MS-DOS attribute (= normal file, can be also 0 for amiga)
         writer.Write((byte)1); // level
         writer.Write((byte)nameLength);
         if (nameLength > 0) // otherwise it is stored in an extended header
             writer.Write(nameBytes);
-        writer.Write(directory ? 0 : crc!.Value);
+        writer.Write((ushort)(directory ? 0 : crc!.Value));
         writer.Write((byte)'A'); // OS = Amiga
 
         if (nameLength == 0)
@@ -397,11 +398,14 @@ internal class Archive : ILHA
             WriteExtendedHeader(0x01, Encoding.ASCII.GetBytes(name));
         }
 
+        directoryName = directoryName.TrimStart('/');
+
         if (directoryName.Length > 0)
         {
             // Write parent directory extended header
             if (!directoryName.EndsWith('/'))
                 directoryName += "/";
+
             WriteExtendedHeader(0x02, Encoding.ASCII.GetBytes(directoryName).Select(b => b == (byte)'/' ? (byte)0xff : b).ToArray());
         }
 
@@ -410,7 +414,7 @@ internal class Archive : ILHA
 
         void WriteExtendedHeader(byte type, params byte[] data)
         {
-            writer.Write((ushort)(1 + data.Length));
+            writer.Write((ushort)(1 + data.Length + 2)); // 1 byte for the type, 2 bytes for next extension size
             writer.Write(type);
             writer.Write(data);
         }

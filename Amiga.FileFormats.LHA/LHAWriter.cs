@@ -1,106 +1,106 @@
 ﻿namespace Amiga.FileFormats.LHA;
 
-    public enum LHAWriteResult
+public enum LHAWriteResult
+{
+    OmittedEmptyDirectories = -1, // warning
+    Success, // ok
+    DiskFullError, // errors ...
+    WriteAccessError,
+    UnsupportedCompressionMethod,
+    InvalidLHAObject,
+    FirstError = DiskFullError
+}
+
+public static class LHAWriter
+{
+    private static LHAWriteResult WriteLHAFile(Stream stream, ILHA lha,
+        CompressionMethod compressionMethod, bool includeEmptyDirectories, DriveInfo? driveInfo)
     {
-	OmittedEmptyDirectories = -1, // warning
-	Success, // ok
-        DiskFullError, // errors ...
-        WriteAccessError,
-        UnsupportedCompressionMethod,
-	InvalidLHAObject,
-        FirstError = DiskFullError
+        if (lha is not Archive archive)
+            return LHAWriteResult.InvalidLHAObject;
+
+        var result = archive.Write(stream, includeEmptyDirectories, compressionMethod, driveInfo);
+
+        if (result == LHAWriteResult.Success && !includeEmptyDirectories && archive.GetAllEmptyDirectories().Length != 0)
+            return LHAWriteResult.OmittedEmptyDirectories;
+
+        return result;
     }
 
-    public static class LHAWriter
+    public static LHAWriteResult WriteLHAFile(Stream stream, ILHA lha,
+        CompressionMethod compressionMethod = CompressionMethod.LH5,
+        bool includeEmptyDirectories = false)
     {
-	private static LHAWriteResult WriteLHAFile(Stream stream, ILHA lha,
-		CompressionMethod compressionMethod, bool includeEmptyDirectories, DriveInfo? driveInfo)
-	{
-		if (lha is not Archive archive)
-			return LHAWriteResult.InvalidLHAObject;
+        return WriteLHAFile(stream, lha, compressionMethod, includeEmptyDirectories, null);
+    }
 
-		var result = archive.Write(stream, includeEmptyDirectories, compressionMethod, driveInfo);
+    public static LHAWriteResult WriteLHAFile(string lhaFilePath, ILHA lha,
+        CompressionMethod compressionMethod = CompressionMethod.LH5,
+        bool includeEmptyDirectories = false)
+    {
+        using var stream = File.Create(lhaFilePath);
 
-		if (result == LHAWriteResult.Success && !includeEmptyDirectories && archive.GetAllEmptyDirectories().Length != 0)
-			return LHAWriteResult.OmittedEmptyDirectories;
+        return WriteLHAFile(stream, lha, compressionMethod, includeEmptyDirectories);
+    }
 
-		return result;
-	}
+    private static LHAWriteResult WriteLHAFile(Stream stream, string directoryPath,
+        string? fileFilter, CompressionMethod compressionMethod,
+        bool includeEmptyDirectories, DriveInfo? driveInfo)
+    {
+        if (!Compressor.SupportedCompressions.ContainsKey(compressionMethod))
+            return LHAWriteResult.UnsupportedCompressionMethod;
 
-	public static LHAWriteResult WriteLHAFile(Stream stream, ILHA lha,
-		CompressionMethod compressionMethod = CompressionMethod.LH5,
-		bool includeEmptyDirectories = false)
-	{
-		return WriteLHAFile(stream, lha, compressionMethod, includeEmptyDirectories, null);
-	}
+        var files = Directory.GetFiles(directoryPath, fileFilter ?? "*", SearchOption.AllDirectories);
+        var directories = includeEmptyDirectories
+            ? Directory.GetDirectories(directoryPath, "*", SearchOption.AllDirectories)
+                .Where(d => !files.Any(f => f.Contains(d, StringComparison.InvariantCultureIgnoreCase)))
+                .ToArray()
+            : null;
+        var lha = Archive.CreateEmpty();
 
-	public static LHAWriteResult WriteLHAFile(string lhaFilePath, ILHA lha,
-		CompressionMethod compressionMethod = CompressionMethod.LH5,
-		bool includeEmptyDirectories = false)
-	{
-		using var stream = File.Create(lhaFilePath);
+        int rootLength = directoryPath.Length;
 
-		return WriteLHAFile(stream, lha, compressionMethod, includeEmptyDirectories);
-	}
+        if (!directoryPath.EndsWith('/') && !directoryPath.EndsWith('\\'))
+            ++rootLength;
 
-	private static LHAWriteResult WriteLHAFile(Stream stream, string directoryPath,
-		string? fileFilter, CompressionMethod compressionMethod,
-		bool includeEmptyDirectories, DriveInfo? driveInfo)
+        string AsRelativePath(string path) => path[rootLength..];
+        bool hasEmptyDirectories = directories != null;
+
+        if (hasEmptyDirectories)
         {
-		if (!Compressor.SupportedCompressions.ContainsKey(compressionMethod))
-			return LHAWriteResult.UnsupportedCompressionMethod;
+            foreach (var directory in directories!)
+            {
+                lha.AddEmptyDirectory(AsRelativePath(directory), new DirectoryInfo(directory).CreationTime);
+            }
+        }
 
-		var files = Directory.GetFiles(directoryPath, fileFilter ?? "*", SearchOption.AllDirectories);
-		var directories = includeEmptyDirectories
-			? Directory.GetDirectories(directoryPath, "*", SearchOption.AllDirectories)
-				.Where(d => !files.Any(f => f.Contains(d, StringComparison.InvariantCultureIgnoreCase)))
-				.ToArray()
-			: null;
-		var lha = Archive.CreateEmpty();
+        foreach (var file in files)
+        {
+            var fileInfo = new FileInfo(file);
+            lha.AddFile(AsRelativePath(file), File.ReadAllBytes(file), fileInfo.CreationTime, fileInfo.LastWriteTime);
+        }
 
-		int rootLength = directoryPath.Length;
+        var result = lha.Write(stream, hasEmptyDirectories, compressionMethod, driveInfo);
 
-		if (!directoryPath.EndsWith('/') && !directoryPath.EndsWith('\\'))
-			++rootLength;
+        if (result == LHAWriteResult.Success && hasEmptyDirectories && !includeEmptyDirectories)
+            return LHAWriteResult.OmittedEmptyDirectories;
 
-		string AsRelativePath(string path) => path[rootLength..];
-		bool hasEmptyDirectories = directories != null;
+        return result;
+    }
 
-		if (hasEmptyDirectories)
-		{
-			foreach (var directory in directories!)
-			{
-				lha.AddEmptyDirectory(AsRelativePath(directory), new DirectoryInfo(directory).CreationTime);
-			}
-		}
+    public static LHAWriteResult WriteLHAFile(Stream stream, string directoryPath,
+        string? fileFilter = null, CompressionMethod compressionMethod = CompressionMethod.LH5,
+        bool includeEmptyDirectories = false)
+    {
+        return WriteLHAFile(stream, directoryPath, fileFilter, compressionMethod, includeEmptyDirectories);
+    }
 
-		foreach (var file in files)
-		{
-			var fileInfo = new FileInfo(file);
-			lha.AddFile(AsRelativePath(file), File.ReadAllBytes(file), fileInfo.CreationTime, fileInfo.LastWriteTime);
-		}
-
-		var result = lha.Write(stream, hasEmptyDirectories, compressionMethod, driveInfo);
-
-		if (result == LHAWriteResult.Success && hasEmptyDirectories && !includeEmptyDirectories)
-			return LHAWriteResult.OmittedEmptyDirectories;
-
-		return result;
-	}
-
-	public static LHAWriteResult WriteLHAFile(Stream stream, string directoryPath,
-		string? fileFilter = null, CompressionMethod compressionMethod = CompressionMethod.LH5,
-		bool includeEmptyDirectories = false)
-	{
-		return WriteLHAFile(stream, directoryPath, fileFilter, compressionMethod, includeEmptyDirectories);
-	}
-
-	public static LHAWriteResult WriteLHAFile(string lhaFilePath, string directoryPath,
+    public static LHAWriteResult WriteLHAFile(string lhaFilePath, string directoryPath,
             string? fileFilter = null, CompressionMethod compressionMethod = CompressionMethod.LH5,
-		bool includeEmptyDirectories = false)
-        {
-		using var stream = File.Create(lhaFilePath);
+        bool includeEmptyDirectories = false)
+    {
+        using var stream = File.Create(lhaFilePath);
 
-		return WriteLHAFile(stream, directoryPath, fileFilter, compressionMethod, includeEmptyDirectories, new DriveInfo(lhaFilePath));
-	}
+        return WriteLHAFile(stream, directoryPath, fileFilter, compressionMethod, includeEmptyDirectories, new DriveInfo(lhaFilePath));
     }
+}
