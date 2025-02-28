@@ -12,8 +12,8 @@ internal class Program
         {
             { "lh0", CompressionMethod.None },
             { "lh5", CompressionMethod.LH5 },
-            //{ "lh6", CompressionMethod.LH6 },
-            //{ "lh7", CompressionMethod.LH7 },
+            { "lh6", CompressionMethod.LH6 },
+            { "lh7", CompressionMethod.LH7 },
             //{ "lz5", CompressionMethod.LZ5 }
         };
 

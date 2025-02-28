@@ -49,14 +49,14 @@ internal class Compressor
         public bool TooLongFlag; // if true, matching candidate is too long
     }
 
-    private static int InitHash(byte[] text, int position)
+    private static uint InitHash(byte[] text, int position)
     {
-        return ((((text[position] << 5) ^ text[position + 1]) << 5) ^ text[position + 2]) & HashMask;
+        return (uint)((((text[position] << 5) ^ text[position + 1]) << 5) ^ text[position + 2]) & (uint)HashMask;
     }
 
-    private static int NextHash(int hash, byte[] text, int position)
+    private static uint NextHash(uint hash, byte[] text, int position)
     {
-        return ((hash << 5) ^ text[position + 2]) & HashMask;
+        return ((hash << 5) ^ text[position + 2]) & (uint)HashMask;
     }
 
     public CRC Compress(BinaryWriter writer, CompressionMethod method, byte[] rawData, out bool unpackable)
@@ -97,7 +97,7 @@ internal class Compressor
         MatchData last;
         match.Length = Threshold - 1;
         match.Offset = 0;
-        byte[] text = new byte[textSize]; // This is basically the dictionary
+        byte[] text = Enumerable.Repeat((byte)' ', textSize).ToArray(); // This is basically the dictionary
         int dataPosition = 0;
         int remainder = ReadBytesAndUpdateCrc(dictSize, textSize - dictSize);
         if (match.Length > remainder)
@@ -132,7 +132,7 @@ internal class Compressor
                 hash[i] = new Hash();
             }
 
-            int token = InitHash(text, position);
+            uint token = InitHash(text, position);
             InsertHash(token, position);
 
             while (remainder > 0 && !cannotPack)
@@ -154,6 +154,7 @@ internal class Compressor
                     // output length and offset
                     Output((ushort)(last.Length + (256 - Threshold)), (ushort)((last.Offset - 1) & (dictSize - 1)), ref cpos);
                     count += last.Length;
+
                     --last.Length;
 
                     while (--last.Length > 0)
@@ -188,13 +189,13 @@ internal class Compressor
             return readSize;
         }
 
-        void InsertHash(int token, int position)
+        void InsertHash(uint token, int position)
         {
             previousHashPosition[position & (dictSize - 1)] = hash[token].Position;
             hash[token].Position = position;
         }
 
-        void NextToken(ref int token, ref int position)
+        void NextToken(ref uint token, ref int position)
         {
             remainder--;
             if (++position >= textSize - MaxMatch)
@@ -204,19 +205,19 @@ internal class Compressor
 
         void UpdateDict(ref int position)
         {
-            Array.Copy(text, 0, text, dictSize, textSize - dictSize);
+            Array.Copy(text, dictSize, text, 0, textSize - dictSize);
             int n = ReadBytesAndUpdateCrc(textSize - dictSize, dictSize);
             remainder += n;
             position -= dictSize;
 
-            for (int i = 0; i < HashSize; ++i)
+            for (int i = 0; i < HashSize; i++)
             {
                 int j = hash[i].Position;
                 hash[i].Position = j > dictSize ? j - dictSize : 0;
                 hash[i].TooLongFlag = false;
             }
 
-            for (int i = 0; i < dictSize; ++i)
+            for (int i = 0; i < dictSize; i++)
             {
                 int j = previousHashPosition[i];
                 previousHashPosition[i] = j > dictSize ? j - dictSize : 0;
@@ -224,7 +225,7 @@ internal class Compressor
         }
 
         // Searches for the longest token matching the current token
-        void SearchDict(int token, int position, int minMatchLength, ref MatchData match)
+        void SearchDict(uint token, int position, int minMatchLength, ref MatchData match)
         {
             if (minMatchLength < Threshold - 1)
                 minMatchLength = Threshold - 1;
@@ -234,9 +235,9 @@ internal class Compressor
             match.Length = minMatchLength;
 
             int offset = 0;
-            int tok = token;
+            uint tok = token;
 
-            while (hash[tok].TooLongFlag && offset < maxMatchLength - Threshold)
+            while (hash[tok].TooLongFlag && offset < MaxMatch - Threshold)
             {
                 // If matching position is too long, the search key is
                 // changed into following token from 'offset' (for speed).
@@ -244,7 +245,7 @@ internal class Compressor
                 tok = NextHash(tok, text, position + offset);
             }
 
-            if (offset == maxMatchLength - Threshold)
+            if (offset == MaxMatch - Threshold)
             {
                 offset = 0;
                 tok = token;
@@ -262,7 +263,7 @@ internal class Compressor
                 match.Length = remainder;
         }
 
-        void SearchDictInternal(int token, int position, int offset, int maxMatchLength, ref MatchData match)
+        void SearchDictInternal(uint token, int position, int offset, int maxMatchLength, ref MatchData match)
         {
             int chain = 0;
             int scanPosition = hash[token].Position;
