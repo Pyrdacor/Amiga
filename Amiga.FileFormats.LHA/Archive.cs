@@ -51,7 +51,7 @@ internal class Archive : ILHA
             string lowerName = directory.Key.ToLower();
 
             if (!files.Any(file => file.Key.ToLower().StartsWith(lowerName)))
-                emptyDirectories.Add(lowerName, directory.Value);
+                emptyDirectories.Add(directory.Key, directory.Value);
         }
 
         RootDirectory = new ArchiveDirectory("<root>", null, files, emptyDirectories, rootCreationDate, rootLastModificationDate);
@@ -218,13 +218,13 @@ internal class Archive : ILHA
                     };
                 });
                 var groups = filesByRootDir.Concat(emptyDirectoriesByRootDir.Where(d => d.RootDirectory != ""))
-                    .GroupBy(file => file.RootDirectory.ToLower());
+                    .GroupBy(file => file.RootDirectory.ToLower()).Select(group => KeyValuePair.Create(group.First().RootDirectory, group));
                 var thisDir = emptyDirectoriesByRootDir.FirstOrDefault(d => d.RootDirectory == "" && d.Path.ToLower() == name.ToLower());
 
                 foreach (var group in groups)
                 {
-                    var files = group.Where(e => e.Entry is not null).ToDictionary(e => e.Path, e => e.Entry!);
-                    var emptyDirs = group.Where(e => e.DirInfo is not null).ToDictionary(e => e.Path, e => e.DirInfo!);
+                    var files = group.Value.Where(e => e.Entry is not null).ToDictionary(e => e.Path, e => e.Entry!);
+                    var emptyDirs = group.Value.Where(e => e.DirInfo is not null).ToDictionary(e => e.Path, e => e.DirInfo!);
                     var creationDate = thisDir?.DirInfo?.Item1 ?? CreationDate;
                     var lastModificationDate = thisDir?.DirInfo?.Item1 ?? LastModificationDate;
                     directories.Add(group.Key, new ArchiveDirectory(group.Key, this, files, emptyDirs,
@@ -631,7 +631,7 @@ internal class Archive : ILHA
             if (!string.IsNullOrWhiteSpace(filename))
                 path = filename;
             if (!string.IsNullOrWhiteSpace(directory))
-                path = directory + "/" + path;
+                path = directory.TrimEnd('/') + "/" + path;
 
             if (headerChecksum != checksum)
                 throw new InvalidDataException("File header checksum is wrong.");
