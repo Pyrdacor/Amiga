@@ -138,6 +138,12 @@ public class AmigaConsole
 
 		if (foundArgs.Count < requiredArguments.Count)
 		{
+			if (foundOptions.Any(option => option.ShortOption == 'h'))
+			{
+				options.Add('h', null);
+				return true;
+			}
+
 			Console.WriteLine("Missing required arguments");
 			PrintHelp();
 			return false;
