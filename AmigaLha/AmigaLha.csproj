@@ -1,15 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<RuntimeIdentifiers>win-x64;win-x86;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
+		<Company>Robert Schneckenhaus</Company>
+		<Authors>Robert Schneckenhaus</Authors>
+		<Description>Command line tool to work with LHA archives.</Description>
+		<Version>0.5.0</Version>
+		<PackageProjectUrl>https://github.com/Pyrdacor/Amiga</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/Pyrdacor/Amiga</RepositoryUrl>
+		<RepositoryType>Github</RepositoryType>
+		<PackageTags>Amiga LHA Compression Archive</PackageTags>
+		<PackageReleaseNotes>Use with caution. This is still in beta phase and not all features/operations are supported.</PackageReleaseNotes>
+		<Configurations>Debug;Release</Configurations>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Amiga.FileFormats.LHA\Amiga.FileFormats.LHA.csproj" />
-    <ProjectReference Include="..\AmigaConsole\AmigaConsole.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Amiga.FileFormats.LHA\Amiga.FileFormats.LHA.csproj" />
+		<ProjectReference Include="..\AmigaConsole\AmigaConsole.csproj" />
+	</ItemGroup>
 
 </Project>
