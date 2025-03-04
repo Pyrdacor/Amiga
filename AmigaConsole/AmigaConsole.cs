@@ -1,4 +1,6 @@
-﻿namespace AmigaConsole;
+﻿using System.Reflection;
+
+namespace AmigaConsole;
 
 public class AmigaConsole
 {
@@ -35,7 +37,7 @@ public class AmigaConsole
 	{
 		string required = string.Join(" ", requiredArguments.Select(arg => $"<{arg}>"));
 		string optional = string.Join(" ", optionalArguments.Select(arg => $"[{arg}]"));
-		string usage = "Usage: AmigaConsole";
+		string usage = $"Usage: {Assembly.GetEntryAssembly()!.GetName().Name}";
 		if (options.Count != 0)
 			usage += " [options]";
 		if (required.Length != 0)
