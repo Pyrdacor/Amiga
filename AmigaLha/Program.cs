@@ -23,7 +23,7 @@ internal class Program
         var amigaConsole = new AmigaConsole();
         amigaConsole.AddArguments(["operation", "lhaPath"], ["folderPath"]);
         amigaConsole.AddOptionalOption('h', "help", "Show this help");
-        amigaConsole.AddOptionalOption('c', "compression-method", $"One of the following compression methods{nl} lh0 (no compression){nl} lh5", true);
+        amigaConsole.AddOptionalOption('c', "compression-method", $"One of the following compression methods{nl} lh0 (no compression){nl} lh5 (default){nl} lh6{nl} lh7", true);
         if (!amigaConsole.ParseArgs(args, out var arguments, out var options) || options.ContainsKey('h'))
         {
             PrintHelp(options.ContainsKey('h'));
