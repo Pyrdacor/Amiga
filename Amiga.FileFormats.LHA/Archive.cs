@@ -99,9 +99,9 @@ internal class Archive : ILHA
         {
             (RootDirectory as ArchiveDirectory)!.Write(writer, hasEmptyDirectories, compressionMethod);
 
-            writer.Write((byte)0);
+            /*writer.Write((byte)0);
             if (writer.BaseStream.Length % 2 == 1)
-                writer.Write((byte)0);
+                writer.Write((byte)0);*/
         }
         catch (CheckedWriter.DiskFullException)
         {

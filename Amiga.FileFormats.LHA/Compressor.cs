@@ -1,4 +1,6 @@
-﻿namespace Amiga.FileFormats.LHA;
+﻿using System.Text;
+
+namespace Amiga.FileFormats.LHA;
 
 internal class Compressor
 {
@@ -119,7 +121,7 @@ internal class Compressor
         byte[] c_len = new byte[NC];
         byte[] pt_len = new byte[NPT];
         int count = 0;
-        int bitCount = 0;
+        int bitCount = CharBits;
         byte subBitBuffer = 0;
         int compressedSize = 0;
         bool cannotPack = false;
@@ -512,21 +514,21 @@ internal class Compressor
         void WritePreTreeLength(short n, short nbit, short special)
         {
             while (n > 0 && pt_len[n - 1] == 0)
-                n--;
+                n--; // skip trailing zero lengths
 
-            PutBits(nbit, (ushort)n);
+            PutBits(nbit, (ushort)n); // store amount of symbols (lengths) in the tree
             int i = 0;
 
             while (i < n)
             {
-                ushort k = pt_len[i++];
+                ushort k = pt_len[i++]; // length of symbol i
 
                 if (k <= 6)
-                    PutBits(3, k);
+                    PutBits(3, k); // 0 to 6 are stored as 3-bit values
                 else
-                    PutBits(k - 3, ushort.MaxValue << 1); // k=7 -> 1110  k=8 -> 11110  k=9 -> 111110 ...
+                    PutBits(k - 3, (uint)ushort.MaxValue << 1); // k=7 -> 1110  k=8 -> 11110  k=9 -> 111110 ...
 
-                if (i == special)
+                if (i == special) // bit lengths 3, 4 and 5 are rare so at index 3 (special) we can skip them with a special encoding
                 {
                     while (i < 6 && pt_len[i] == 0)
                         i++;
@@ -558,33 +560,39 @@ internal class Compressor
                         count++;
                     }
 
-                    if (count <= 2)
-                        t_freq[0] += (ushort)count;
-                    else if (count <= 18)
-                        t_freq[1]++;
-                    else if (count == 19)
+                    if (count <= 2) // 2 zero lengths
+                        t_freq[0] += (ushort)count; // track them as 2 normal zero symbols (no RLE)
+                    else if (count <= 18) // 3-18 zero lengths
+                        t_freq[1]++; // track them as 0-RLE entry (symbol 17)
+                    else if (count == 19) // 19 zero lengths
                     {
-                        t_freq[0]++;
-                        t_freq[1]++;
+                        t_freq[0]++; // track as one normal zero symbol
+                        t_freq[1]++; // and 0-RLE (symbol 17) which allows at max 18
                     }
                     else
-                        t_freq[2]++;
+                        t_freq[2]++; // track as long 0-RLE (symbol 18)
                 }
                 else
                 {
-                    t_freq[k + 2]++;
+                    t_freq[k + 2]++; // track as normal bit length (1-16)
                 }
+
+                // This seems not to use symbols 19 and 20 (RLE for non-zero lengths).
             }
         }
 
         void PutBits(int bits, uint value)
         {
+            value &= 0xffff;
             value <<= 16 - bits;
+            value &= 0xffff;
             PutCode(bits, value);
         }
 
         void PutCode(int bits, uint code)
         {
+            code &= 0xffff;
+
             while (bits >= bitCount)
             {
                 bits -= bitCount;
@@ -757,13 +765,14 @@ internal class Compressor
         {
             ushort[] weight = new ushort[17];
             ushort[] start = new ushort[17];
-            ushort total = 0;
+            int total = 0;
 
             for (int i = 1; i <= 16; i++)
             {
-                start[i] = total;
+                start[i] = (ushort)total;
                 weight[i] = (ushort)(1 << (16 - i));
-                total += (ushort)(weight[i] * leafNum[i]);
+                total += weight[i] * leafNum[i];
+                total &= 0xffff;
             }
 
             for (int c = 0; c < nchar; c++)

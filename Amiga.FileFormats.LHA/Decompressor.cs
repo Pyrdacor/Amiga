@@ -203,7 +203,7 @@ internal class Decompressor
 
 		private void ReadPtLength(int nn, int nbit, int special)
 		{
-			ushort c;
+			int c;
 			int n = parent.GetBits(nbit);
 			if (n == 0)
 			{
@@ -211,7 +211,7 @@ internal class Decompressor
 				for (int i = 0; i < nn; i++)
 					pt_len[i] = 0;
 				for (int i = 0; i < 256; i++)
-					pt_table[i] = c;
+					pt_table[i] = (ushort)c;
 			}
 			else
 			{
@@ -220,9 +220,11 @@ internal class Decompressor
 				{
 					c = parent.PeekBits(3);
 					if (c != 7)
-						parent.FillBuf(3);
+						parent.FillBuf(3); // 0-6 are encoded in 3 bits
 					else
 					{
+						// if first 3 bits are 7 (111...)
+						// it is 7 or above encoded as 4 bits or above as 111..0
 						ushort mask = 1 << (16 - 4);
 
 						while ((mask & parent.bitBuf) != 0)
@@ -231,22 +233,24 @@ internal class Decompressor
 							c++;
 						}
 
+						// c now is the number (7+)
+						// and bits are c - 3 (4 for 7, 5 for 8, ...)
 						parent.FillBuf(c - 3);
 					}
 
-					pt_len[i++] = (byte)c;
+					pt_len[i++] = (byte)c; // set bit length
 
-					if (i == special)
+					if (i == special) // special allows skipping values
 					{
-						c = parent.GetBits(2);
+						c = parent.GetBits(2); // read offset
 
 						while (--c >= 0 && i < NPT)
-							pt_len[i++] = 0;
+							pt_len[i++] = 0; // fill with zero
 					}
 				}
 
 				while (i < nn)
-					pt_len[i++] = 0;
+					pt_len[i++] = 0; // fill the rest with zeros as well
 
 				MakeTable(nn, pt_len, 8, pt_table);
 			}
@@ -263,7 +267,7 @@ internal class Decompressor
 			for (int i = 1; i <= 16; i++)
 			{
 				count[i] = 0;
-				weight[i] = 1 << (16 - 1);
+				weight[i] = (ushort)(1 << (16 - i));
 			}
 
 			for (int i = 0; i < n; i++)
@@ -280,6 +284,7 @@ internal class Decompressor
 			{
 				start[i] = (ushort)total;
 				total += weight[i] * count[i];
+				total &= 0xffff;
 			}
 
 			if ((total & 0xffff) != 0 || tableBits > 16)
@@ -363,7 +368,7 @@ internal class Decompressor
 		private void ReadCLength()
 		{
 			int n = parent.GetBits(CBIT);
-			ushort c;
+			int c;
 
 			if (n == 0)
 			{
@@ -372,7 +377,7 @@ internal class Decompressor
 				for (int i = 0; i < NC; i++)
 					c_len[i] = 0;
 				for (int i = 0; i < 4096; i++)
-					c_table[i] = c;
+					c_table[i] = (ushort)c;
 			}
 			else
 			{
@@ -451,8 +456,9 @@ internal class Decompressor
 		bitBuf = 0;
 		subBitBuf = 0;
 		bitCount = 0;
-		FillBuf(2 * 8);
-		List<byte> rawData = new List<byte>((int)rawSize);
+		compsize = (int)reader.BaseStream.Length;
+        FillBuf(2 * 8);
+		List<byte> rawData = new((int)rawSize);
 
 		decompressor.DecodeStart(dtext);
 
@@ -461,8 +467,8 @@ internal class Decompressor
 		int decodeCount = 0;
 		loc = 0;
 
-		while (decodeCount < rawSize)
-		{
+        while (decodeCount < rawSize)
+        {
 			ushort c = decompressor.DecodeC();
 
 			if (c < 256) // literal
