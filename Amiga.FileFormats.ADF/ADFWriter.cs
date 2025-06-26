@@ -143,7 +143,7 @@ public static class ADFWriter
     }
 
     public static ADFWriteResult WriteADFFile(Stream stream, string name, ADFWriterConfiguration configuration,
-    Dictionary<string, byte[]> files, List<string>? emptyDirectoryPaths = null)
+        Dictionary<string, byte[]> files, List<string>? emptyDirectoryPaths = null)
     {
         if (name.Contains('/') || name.Contains(':'))
             throw new ArgumentException("Volume names must not contain ':' or '/'.");
