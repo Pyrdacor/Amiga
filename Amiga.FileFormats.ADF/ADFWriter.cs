@@ -82,7 +82,11 @@ public static class ADFWriter
                 .ToArray()
             : null;
 
-        Directory.CreateDirectory(Path.GetDirectoryName(adfFilePath)!);
+        var directory = Path.GetDirectoryName(adfFilePath);
+
+        if (!string.IsNullOrWhiteSpace(directory))
+            Directory.CreateDirectory(directory);
+
         using var stream = File.Create(adfFilePath);
         int rootLength = directoryPath.Length;
 
@@ -154,7 +158,7 @@ public static class ADFWriter
                 throw new ArgumentException($"File names must not contain ':' or '\\'. File name was: '{file}'.");
         }
 
-        emptyDirectoryPaths ??= new();
+        emptyDirectoryPaths ??= [];
 
         foreach (var dir in emptyDirectoryPaths)
         {
