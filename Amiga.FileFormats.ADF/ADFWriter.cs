@@ -13,8 +13,8 @@ public enum ADFWriteResult
 // them when writing. To ease the data creation but also as it isn't that valuable in my opinion.
 public static class ADFWriter
 {
-    private static readonly byte[] DefaultBootCode = new byte[82]
-    {
+    public static readonly byte[] DefaultBootCode =
+    [
         0x43, 0xFA, 0x00, 0x3E, // lea      exp(pc),a1  ; Lib name
         0x70, 0x25,             // moveq    #37,d0      ; Lib version
         0x4E, 0xAE, 0xFD, 0xD8, // jsr      -552(a6)    ; OpenLibrary()
@@ -46,33 +46,33 @@ public static class ADFWriter
         0x6E, 0x2E, 0x6C, 0x69,
         0x62, 0x72, 0x61, 0x72,
         0x79, 0x00
-    };
+    ];
 
     internal delegate void WriteSectors(int index, int count, Action<DataWriter> writeHandler);
 
-		public static ADFWriteResult WriteADFFile(string adfFilePath, string name, string directoryPath,
-			string? fileFilter = null, bool includeEmptyDirectories = false)
+    public static ADFWriteResult WriteADFFile(string adfFilePath, string name, string directoryPath,
+        string? fileFilter = null, bool includeEmptyDirectories = false)
     {
         return WriteADFFile(adfFilePath, name, directoryPath, includeEmptyDirectories, fileFilter, new ADFWriterConfiguration());
     }
 
-		public static ADFWriteResult WriteADFFile(string adfFilePath, string name, string directoryPath,
-	        bool includeEmptyDirectories, string? fileFilter, FileSystem fileSystem,
-	        bool bootable, bool internationalMode, bool hd)
+    public static ADFWriteResult WriteADFFile(string adfFilePath, string name, string directoryPath,
+        bool includeEmptyDirectories, string? fileFilter, FileSystem fileSystem,
+        bool bootable, bool internationalMode, bool hd)
     {
-	        var configuration = new ADFWriterConfiguration
-	        {
-		        FileSystem = fileSystem,
-		        InternationalMode = internationalMode,
-		        HD = hd,
-		        DiskFullBehavior = DiskFullBehavior.Error,
-		        BootCode = bootable ? DefaultBootCode : null
-	        };
+        var configuration = new ADFWriterConfiguration
+        {
+            FileSystem = fileSystem,
+            InternationalMode = internationalMode,
+            HD = hd,
+            DiskFullBehavior = DiskFullBehavior.Error,
+            BootCode = bootable ? DefaultBootCode : null
+        };
 
         return WriteADFFile(adfFilePath, name, directoryPath, includeEmptyDirectories, fileFilter, configuration);
-		}
+    }
 
-		public static ADFWriteResult WriteADFFile(string adfFilePath, string name, string directoryPath,
+    public static ADFWriteResult WriteADFFile(string adfFilePath, string name, string directoryPath,
         bool includeEmptyDirectories, string? fileFilter, ADFWriterConfiguration configuration)
     {
         var files = Directory.GetFiles(directoryPath, fileFilter ?? "*", SearchOption.AllDirectories);
@@ -99,13 +99,29 @@ public static class ADFWriter
             directories?.Select(d => GetRelativePath(d))?.ToList());
     }
 
-		public static ADFWriteResult WriteADFFile(Stream stream, string name,
-        Dictionary<string, Stream> files, List<string>? emptyDirectoryPaths = null)
-		{
-			return WriteADFFile(stream, name, new ADFWriterConfiguration(), files, emptyDirectoryPaths);
-		}
+    public static ADFWriteResult WriteADFFile(Stream stream, string name, FileSystem fileSystem,
+        bool bootable, bool internationalMode, bool hd, Dictionary<string,
+            Stream> files, List<string>? emptyDirectoryPaths = null)
+    {
+        var configuration = new ADFWriterConfiguration
+        {
+            FileSystem = fileSystem,
+            InternationalMode = internationalMode,
+            HD = hd,
+            DiskFullBehavior = DiskFullBehavior.Error,
+            BootCode = bootable ? DefaultBootCode : null
+        };
 
-		public static ADFWriteResult WriteADFFile(Stream stream, string name, ADFWriterConfiguration configuration,
+        return WriteADFFile(stream, name, configuration, files, emptyDirectoryPaths);
+    }
+
+    public static ADFWriteResult WriteADFFile(Stream stream, string name,
+        Dictionary<string, Stream> files, List<string>? emptyDirectoryPaths = null)
+    {
+        return WriteADFFile(stream, name, new ADFWriterConfiguration(), files, emptyDirectoryPaths);
+    }
+
+    public static ADFWriteResult WriteADFFile(Stream stream, string name, ADFWriterConfiguration configuration,
         Dictionary<string, Stream> files, List<string>? emptyDirectoryPaths = null)
     {
         static byte[] DataFromStream(Stream stream)
@@ -120,14 +136,14 @@ public static class ADFWriter
             emptyDirectoryPaths);
     }
 
-		public static ADFWriteResult WriteADFFile(Stream stream, string name,
-			Dictionary<string, byte[]> files, List<string>? emptyDirectoryPaths = null)
-		{
-			return WriteADFFile(stream, name, new ADFWriterConfiguration(), files, emptyDirectoryPaths);
-		}
-
-		public static ADFWriteResult WriteADFFile(Stream stream, string name, ADFWriterConfiguration configuration,
+    public static ADFWriteResult WriteADFFile(Stream stream, string name,
         Dictionary<string, byte[]> files, List<string>? emptyDirectoryPaths = null)
+    {
+        return WriteADFFile(stream, name, new ADFWriterConfiguration(), files, emptyDirectoryPaths);
+    }
+
+    public static ADFWriteResult WriteADFFile(Stream stream, string name, ADFWriterConfiguration configuration,
+    Dictionary<string, byte[]> files, List<string>? emptyDirectoryPaths = null)
     {
         if (name.Contains('/') || name.Contains(':'))
             throw new ArgumentException("Volume names must not contain ':' or '/'.");
