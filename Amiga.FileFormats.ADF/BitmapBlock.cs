@@ -36,14 +36,13 @@ internal class BitmapBlock
 
         uint checkSum = reader.ReadDword();
 
+        bitmapData = reader.ReadBytes(508);
+
         if (!allowInvalidChecksum)
         {
-            // Same checksum calculation as in RootBlock
-            if (checkSum != RootBlock.CalculateChecksum(blockData))
+            if (checkSum != CalculateChecksum(bitmapData))
                 throw new InvalidDataException("Invalid bitmap block checksum.");
         }
-
-        bitmapData = reader.ReadBytes(508);
     }
 
     /// <summary>
@@ -86,7 +85,7 @@ internal class BitmapBlock
         int currentLong = bitmapDataIndex / 4;
         int currentSector = 2 + bitmapDataIndex * 8;
 
-        while (currentLong < totalLongs)
+        while (currentLong++ < totalLongs)
         {
             uint mask = 0;
 
@@ -120,8 +119,19 @@ internal class BitmapBlock
     {
         sectorWriter(index, 1, writer =>
         {
-            writer.WriteDword(RootBlock.CalculateChecksum(bitmapData));
+            writer.WriteDword(CalculateChecksum(bitmapData));
             writer.WriteBytes(bitmapData);
         });
+    }
+
+    internal uint CalculateChecksum(byte[] bitmapData)
+    {
+        var reader = new DataReader(bitmapData);
+        uint checksum = 0;
+
+        for (int i = 0; i < bitmapData.Length / sizeof(uint); ++i)
+            checksum += reader.ReadDword();
+
+        return unchecked((uint)-checksum);
     }
 }
