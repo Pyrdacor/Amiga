@@ -28,6 +28,7 @@ internal class RootBlock : BaseDirectory
     public override string Comment => "";
     internal override uint Sector { get; }
     public FileSystem FileSystem { get; }
+    public BitmapBlock? BitmapBlock { get; }
 
     public RootBlock(SectorDataProvider sectorDataProvider, bool hd, FileSystem fileSystem,
         bool dirCache, bool internationalMode, bool allowInvalidChecksum)
@@ -55,10 +56,24 @@ internal class RootBlock : BaseDirectory
         }
 
         // Read the hash table (72 longs)
-        HashTable = Enumerable.Range(0, 72).Select(_ => reader.ReadDword()).ToArray();
+        HashTable = [.. Enumerable.Range(0, 72).Select(_ => reader.ReadDword())];
 
-        reader.Position += 27 * 4; // skip the bitmap data for now
-        // TODO: later check if some files/dirs are marked as free (= deleted)?
+        var bitmapFlag = reader.ReadDword(); // -1 = valid
+
+        if (bitmapFlag == 0xffffffff)
+        {
+            var bitmapBlockSector = reader.ReadDword(); // bitmap is stored in next sector
+
+            BitmapBlock = new BitmapBlock(sectorDataProvider, bitmapBlockSector, allowInvalidChecksum);
+
+            // TODO: later check if some files/dirs are marked as free (= deleted)?
+
+            reader.Position += 25 * 4; // skip bitmap extension (not used for floppies) and following bitmap blocks (floppies only need 1)
+        }
+        else
+        {
+            reader.Position += 26 * 4; // skip the bitmap data
+        }        
 
         LastModificationDate = Util.ReadDateTime(reader);
 
@@ -150,6 +165,7 @@ internal class RootBlock : BaseDirectory
         var sortedFiles = allFiles.ToList();
         sortedFiles.Sort((a, b) => b.Value.CompareTo(a.Value)); // largest first
         int entrySector = rootBlockSector + 2;
+        int allocatedSectorCount = 2;
 
         int GetSectorCountFromFileSize(int size)
         {
@@ -166,6 +182,10 @@ internal class RootBlock : BaseDirectory
         int NextSector()
         {
             var sector = entrySector++;
+            allocatedSectorCount++;
+
+            if (sector == 0)
+                sector = 2; // always skip sectors 0 and 1 as they are reserved for boot block even if not used
 
             if (entrySector == sectorCount)
                 entrySector = 2;
@@ -401,97 +421,8 @@ internal class RootBlock : BaseDirectory
         });
 
         // Write the bitmap data block
-        sectorWriter(rootBlockSector + 1, 1, writer =>
-        {
-            writer.WriteDword(0); // checksum placeholder
-
-            int numLongs = configuration.HD ? 110 : 55;
-            int firstHalfEndSector = entrySector <= rootBlockSector ? entrySector : rootBlockSector;
-            int secondHalfEndSector = entrySector <= rootBlockSector ? sectorCount : entrySector;
-            bool firstHalfFilled = entrySector <= rootBlockSector;
-            int fullLongs = (firstHalfEndSector - 2) / 32;
-            int rootLong = (rootBlockSector - 2) / 32; // the long which contains the root block bit (starts the second half)
-            int sectorEnd = firstHalfEndSector;
-            bool filled = firstHalfFilled;
-            int partialBits = (sectorEnd - 2) % 32;
-            bool switchHalves = rootLong == fullLongs && sectorEnd == firstHalfEndSector;
-
-            while (writer.Position < (numLongs + 1) * 4) // + 1 for the checksum long
-            {
-                uint value = filled ? 0 : 0xffffffff;
-
-                for (int i = 0; i < fullLongs; ++i)
-                    writer.WriteDword(value);
-
-                if (partialBits != 0 || switchHalves)
-                {
-                    uint bitmap = 0xffffffff;
-
-                    if (filled)
-                    {
-                        for (int i = 0; i < partialBits; ++i)
-                            bitmap &= ~(1u << i);
-                    }
-
-                    if (switchHalves)
-                    {
-                        // switch to second half
-                        filled = true; // the second half is always filled at the beginning
-                        sectorEnd = secondHalfEndSector;
-
-                        int i = (rootBlockSector - 2) % 32;
-                        int maxSectors = secondHalfEndSector - rootBlockSector;
-                        for (int j = 0; j < maxSectors && i < 32; ++j, ++i)
-                        {
-                            bitmap &= ~(1u << i);
-                        }
-
-                        filled = i + maxSectors > 32;
-                        switchHalves = false;
-                    }
-                    else
-                    {
-                        // If we didn't switch halves, we just found a partial long.
-                        // This means the following sectors are all free. So we can
-                        // just set the sectorEnd to the rootBlockSector (for first
-                        // half) or to sectorCount (for second half). Also reset the
-                        // filled flag to false.
-                        filled = false;
-                        sectorEnd = sectorEnd < rootBlockSector ? rootBlockSector : sectorCount;
-                        switchHalves = sectorEnd == rootBlockSector;
-                    }
-
-                    writer.WriteDword(bitmap);
-                }
-                else
-                {
-                    // If we are here, no partial long was present and we also didn't
-                    // arrive at the second half. This means we either are at the end
-                    // of the stream or we finished exactly at a 32 bit boundary with
-                    // a filled state. In the latter case we have to invert the filled
-                    // state.
-                    if (writer.Position == (numLongs + 1) * 4)
-                        break;
-                    if (!filled)
-                        throw new InvalidOperationException("Invalid bitmap state.");
-                    filled = false;
-                    sectorEnd = sectorEnd < rootBlockSector ? rootBlockSector : sectorCount;
-                    switchHalves = sectorEnd == rootBlockSector;
-                }
-
-                int currentSectorOffset = (writer.Position - 4) * 8;
-                fullLongs = (sectorEnd - currentSectorOffset - 2) / 32;
-                partialBits = (sectorEnd - currentSectorOffset - 2) % 32;
-            }
-
-            // Fill the rest of the sector with zeros
-            writer.WriteBytes(Enumerable.Repeat((byte)0, 508 - numLongs * 4).ToArray());
-
-            uint checksum = CalculateChecksum(writer.ToArray());
-            writer.Position = 0;
-            writer.WriteDword(checksum);
-            writer.Position = Size;
-        });
+        var bitmapBlock = new BitmapBlock(configuration.HD, allocatedSectorCount);
+        bitmapBlock.Write(sectorWriter, rootBlockSector + 1);
 
         return result;
     }
