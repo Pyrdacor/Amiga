@@ -111,7 +111,7 @@ internal class BitmapBlock
             if (sectorIndex < halfSectorCount) // first disk half sector
                 return endSector > halfSectorCount || endSector <= sectorIndex;
             else // second disk half sector
-                return endSector <= halfSectorCount || endSector >= sectorIndex;
+                return endSector > halfSectorCount && endSector <= sectorIndex;
         }
     }
 

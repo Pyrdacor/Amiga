@@ -10,7 +10,7 @@
     <RepositoryType>GitHub</RepositoryType>
     <Company>Robert Schneckenhaus</Company>
 	<Authors>Robert Schneckenhaus</Authors>
-	<Version>1.0.4</Version>
+	<Version>1.0.5</Version>
 	<PackageTags>Amiga ADF Disk Floppy OFS</PackageTags>
 	<PackageReleaseNotes>Use with caution. This is still in beta phase and not all features/operations are supported.</PackageReleaseNotes>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
