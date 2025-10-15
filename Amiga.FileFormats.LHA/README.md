@@ -61,3 +61,15 @@ if (result == LHAWriteResult.Success)
     Console.WriteLine("It worked!");
 }
 ```
+
+## Creating an archive from a dictionary of file data.
+
+```cs
+var lha = LHA.FromFileDictionary(new Dictionary<string, byte[]>
+{
+    { "file1.txt", Encoding.UTF8.GetBytes("This is file 1") },
+    { "file2.txt", Encoding.UTF8.GetBytes("This is file 2") },
+});
+
+LHAWriter.WriteLHAFile("my.lha", lha);
+```

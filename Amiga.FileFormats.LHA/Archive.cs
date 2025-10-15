@@ -1,5 +1,4 @@
 ﻿using Amiga.FileFormats.Core;
-using System.IO;
 using System.Text;
 using TimestampAndComment = System.Tuple<System.DateTime?, string>;
 
