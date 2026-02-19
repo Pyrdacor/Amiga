@@ -1,8 +1,6 @@
-﻿using System.ComponentModel;
+﻿namespace Amiga.FileFormats.LHA;
 
-namespace Amiga.FileFormats.LHA;
-
-internal class Decompressor
+internal class Decompressor(BinaryReader reader, CompressionMethod method, uint rawSize)
 {
 	public static readonly Dictionary<string, CompressionMethod> SupportedCompressions = new()
 	{
@@ -12,12 +10,7 @@ internal class Decompressor
 		{ "-lh7-", CompressionMethod.LH7 },
 		{ "-lz5-", CompressionMethod.LZ5 },
 	};
-
-	private readonly CRC crc = new();
-	private readonly BinaryReader reader;
-	private readonly CompressionMethod method;
-	private readonly uint rawSize;
-	private int bitCount = 0;
+    private int bitCount = 0;
 	private ushort bitBuf = 0;
 	private byte subBitBuf = 0;
 	private int compsize = 0;
@@ -30,14 +23,7 @@ internal class Decompressor
 	private const int Threshold = 3;
 	private const int EOF = -1;
 
-	public Decompressor(BinaryReader reader, CompressionMethod method, uint rawSize)
-	{
-		this.reader = reader;
-		this.method = method;
-		this.rawSize = rawSize;
-	}
-
-	public byte[] ReadWithCrc(out CRC crc)
+    public byte[] ReadWithCrc(out CRC crc)
 	{
 		crc = new CRC();
 		var data = Read();
@@ -53,20 +39,14 @@ internal class Decompressor
 		void DecodeStart(byte[] dictionaryText);
 	}
 
-	private class LZDecompressor : IInternalDecompressor
+	private class LZDecompressor(Decompressor parent) : IInternalDecompressor
 	{
 		private const int Magic = 19;
 		private int flagCount = 0;
 		private ushort flag = 0;
 		private int matchPosition = 0;
-		private readonly Decompressor parent;
 
-		public LZDecompressor(Decompressor parent)
-		{
-			this.parent = parent;
-		}
-
-		public ushort DecodeC()
+        public ushort DecodeC()
 		{
 			if (flagCount == 0)
 			{
@@ -106,7 +86,7 @@ internal class Decompressor
 		}
 	}
 
-	private class LHDecompressor : IInternalDecompressor
+	private class LHDecompressor(Decompressor parent, int dictBits, int pbit) : IInternalDecompressor
 	{
 		private const int MaxMatch = 256;
 		private const int MaxDictBits = LZHuff7DictBits;
@@ -124,18 +104,9 @@ internal class Decompressor
 		private readonly byte[] c_len = new byte[NC];
 		private readonly byte[] pt_len = new byte[NPT];
 		private int blockSize = 0;
-		private readonly int pbit;
-		private readonly int np;
-		private readonly Decompressor parent;
+        private readonly int np = dictBits + 1;
 
-		public LHDecompressor(Decompressor parent, int dictBits, int pbit)
-		{
-			this.parent = parent;
-			this.pbit = pbit;
-			np = dictBits + 1;
-		}
-
-		public ushort DecodeC()
+        public ushort DecodeC()
 		{
 			if (blockSize == 0)
 			{
@@ -456,9 +427,12 @@ internal class Decompressor
 		bitBuf = 0;
 		subBitBuf = 0;
 		bitCount = 0;
-		compsize = (int)reader.BaseStream.Length;
-        FillBuf(2 * 8);
-		List<byte> rawData = new((int)rawSize);
+        compsize = (int)reader.BaseStream.Length;
+
+		if (method != CompressionMethod.LZ5)
+			FillBuf(2 * 8);
+
+        List<byte> rawData = new((int)rawSize);
 
 		decompressor.DecodeStart(dtext);
 
@@ -510,7 +484,7 @@ internal class Decompressor
 			rawData.AddRange(dtext.Take(loc));
 		}
 
-		return rawData.ToArray();
+		return [.. rawData];
 	}
 
 	private ushort PeekBits(int count)
